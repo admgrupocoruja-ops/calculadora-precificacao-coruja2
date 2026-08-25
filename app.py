@@ -77,54 +77,168 @@ REGRAS_ALCADAS = {
     },
 }
 
-# ---- Estrutura de custos específica do ativo "Painel Jd. Oceânico" ----
-# (aba "Painel Jd Oceânico" — custos fixos diretos + taxas comerciais)
-PREMISSAS_JD_OCEANICO = {
-    "Cota Inteira": {
-        "n_unidades_ativo": 8,     # nº de cotas inteiras que compõem o ativo
-        "repasse": 2200.00,
-        "custos_fixos_diretos": {
-            "painel_led": 2062.50,
-            "energia": 1125.00,
-            "internet_cameras": 150.00,
-            "tap": 6250.00,
-        },
-        "bv": 0.20,            # Bonificação de Veiculação (% sobre Valor de Venda)
-        "comissao": 0.05,      # Comissão do executivo (% sobre Valor de Venda)
-        "inadimplencia": 0.02, # Provisão de inadimplência (% sobre Valor de Venda)
-    },
-    "Meia Cota": {
-        "n_unidades_ativo": 16,    # nº de meias-cotas que compõem o ativo
-        "repasse": 1100.00,
-        "custos_fixos_diretos": {
-            "painel_led": 1031.25,
-            "energia": 562.50,
-            "internet_cameras": 75.00,
-            "tap": 3125.00,
-        },
-        "bv": 0.20,
-        "comissao": 0.05,
-        "inadimplencia": 0.02,
-    },
-}
+# ---- Estrutura de custos por ativo ----
+# (uma aba por ativo na planilha "Rascunho" — custos fixos diretos + taxas
+# comerciais de cada um, extraídos diretamente das fórmulas de cada aba,
+# não dos valores de exemplo digitados nas linhas). Cada ativo é um
+# dicionário de "tipo/posição" -> premissas daquele tipo:
+#   n_unidades_ativo    nº de unidades que dividem o limite mensal de
+#                        isenção do Adicional de IRPJ (lido do divisor
+#                        exato da fórmula de Adicional IRPJ de cada aba)
+#   custos_fixos_diretos R$ fixos por unidade (repasse, painel, energia,
+#                        produção, TAP etc. — um valor negativo representa
+#                        uma receita adicional, ex. "Editoração" da Revista
+#                        Península, que soma em vez de subtrair)
+#   repasse_pct          usado só quando o repasse é um percentual sobre o
+#                        Valor de Venda em vez de um valor fixo (ex. MUB
+#                        Digital); default 0.0 nos demais ativos
+#   bv / comissao / inadimplencia   percentuais sobre o Valor de Venda
+def _tipo(n_unidades, custos_fixos, bv, comissao, inadimplencia, repasse_pct=0.0):
+    return {
+        "n_unidades_ativo": n_unidades,
+        "custos_fixos_diretos": custos_fixos,
+        "repasse_pct": repasse_pct,
+        "bv": bv,
+        "comissao": comissao,
+        "inadimplencia": inadimplencia,
+    }
 
-# Catálogo de ativos suportados pela calculadora. Para habilitar um novo
-# ativo, adicione aqui um dicionário no mesmo formato de PREMISSAS_JD_OCEANICO.
+
 ATIVOS = {
-    "Painel Jd. Oceânico": PREMISSAS_JD_OCEANICO,
+    # aba "Painel Jd Oceânico"
+    "Painel Jd. Oceânico": {
+        "Cota Inteira": _tipo(8, {"repasse": 2200.00, "painel_led": 2062.50, "energia": 1125.00,
+                                   "internet_cameras": 150.00, "tap": 6250.00}, bv=0.10, comissao=0.05, inadimplencia=0.02),
+        "Meia Cota": _tipo(16, {"repasse": 1100.00, "painel_led": 1031.25, "energia": 562.50,
+                                 "internet_cameras": 75.00, "tap": 3125.00}, bv=0.20, comissao=0.05, inadimplencia=0.02),
+    },
+    # aba "Painel Presidente Vargas"
+    "Painel Presidente Vargas": {
+        "Cota Inteira": _tipo(8, {"repasse": 625.00, "energia": 462.50, "internet_cameras": 150.00,
+                                   "manutencao": 93.75}, bv=0.20, comissao=0.05, inadimplencia=0.02),
+        "Meia Cota": _tipo(16, {"repasse": 312.50, "energia": 231.25, "internet_cameras": 75.00,
+                                 "manutencao": 46.875, "tap": 3125.00}, bv=0.20, comissao=0.05, inadimplencia=0.02),
+    },
+    # aba "Revista Rio 2" (venda por página)
+    "Revista Rio 2": {
+        "Padrão": _tipo(1, {"repasse": 0.00, "producao": 382.05, "freelancer": 666.67, "layla": 28.33},
+                         bv=0.0, comissao=0.20, inadimplencia=0.02),
+    },
+    # aba "Revista Península" (venda por página)
+    "Revista Península": {
+        "Padrão": _tipo(1, {"editoracao_recebimento": -1200.00, "repasse": 520.00, "producao": 0.00,
+                             "freelancer": 280.00, "layla": 226.64}, bv=0.0, comissao=0.20, inadimplencia=0.02),
+    },
+    # aba "Busdoor" — baseline por ponto/inserção com Quantidade = 1
+    "Busdoor": {
+        "Padrão": _tipo(1, {"repasse_por_onibus": 150.00, "producao": 20.00},
+                         bv=0.15, comissao=0.05, inadimplencia=0.02),
+    },
+    # aba "MUB Estático"
+    "MUB Estático": {
+        "Face": _tipo(4, {"repasse": 1250.00, "producao": 630.00, "manutencao": 100.00, "tap": 1250.00},
+                       bv=0.20, comissao=0.05, inadimplencia=0.02),
+    },
+    # aba "MUB Digital" — repasse é percentual (10%) sobre o Valor de Venda
+    "MUB Digital": {
+        "Cota Inteira": _tipo(8, {"tap": 4500.00}, bv=0.20, comissao=0.05, inadimplencia=0.02, repasse_pct=0.10),
+        "Meia Cota": _tipo(8, {"tap": 562.50}, bv=0.20, comissao=0.05, inadimplencia=0.05, repasse_pct=0.10),
+    },
+    # aba "Envelopamento - Rio 2"
+    "Envelopamento Rio 2": {
+        "Padrão": _tipo(23, {"repasse": 10000.00, "producao": 6000.00}, bv=0.20, comissao=0.05, inadimplencia=0.02),
+    },
+    # aba "Envelopamento - BRT" — 4 posições heterogêneas, cada uma apurada separadamente
+    "Envelopamento BRT": {
+        "Estação": _tipo(1, {"repasse": 22000.00, "producao": 102000.00}, bv=0.20, comissao=0.05, inadimplencia=0.02),
+        "Articulado": _tipo(1, {"repasse": 20000.00, "producao": 9000.00}, bv=0.20, comissao=0.05, inadimplencia=0.02),
+        "Padron": _tipo(1, {"repasse": 8000.00, "producao": 7000.00}, bv=0.20, comissao=0.05, inadimplencia=0.02),
+        "Urbano": _tipo(1, {"repasse": 5000.00, "producao": 6000.00}, bv=0.20, comissao=0.05, inadimplencia=0.02),
+    },
+    # aba "Envelopamento - Fretado"
+    "Envelopamento Fretado": {
+        "Padrão": _tipo(1, {"repasse": 27500.00, "producao": 6000.00}, bv=0.20, comissao=0.05, inadimplencia=0.02),
+    },
+    # aba "Envelopamento - Península"
+    "Envelopamento Península": {
+        "Padrão": _tipo(9, {"repasse": 3250.00, "producao": 6000.00}, bv=0.20, comissao=0.05, inadimplencia=0.02),
+    },
+    # aba "Envelopamento - Frames"
+    "Envelopamento Frames": {
+        "Padrão": _tipo(3, {"repasse": 4500.00, "producao": 6000.00}, bv=0.20, comissao=0.05, inadimplencia=0.02),
+    },
+    # aba "Envelopamento - Barra Bali"
+    "Envelopamento Barra Bali": {
+        "Padrão": _tipo(13, {"repasse": 6900.00, "producao": 6000.00}, bv=0.20, comissao=0.05, inadimplencia=0.02),
+    },
+    # aba "Empenas Estáticas" — 12 imóveis heterogêneos, cada um apurado separadamente
+    "Empenas Estáticas": {
+        "Barra - Jardim Oceânico": _tipo(11, {"repasse_fixo": 8000.00, "repasse_veiculado": 4000.00,
+                                               "producao": 8100.00, "tap": 10040.00}, bv=0.20, comissao=0.05, inadimplencia=0.02),
+        "Botafogo - Álvaro Rodrigues": _tipo(11, {"repasse_veiculado": 8000.00, "producao": 7900.00,
+                                                   "tap": 7800.00}, bv=0.20, comissao=0.05, inadimplencia=0.02),
+        "Botafogo - General Polidoro": _tipo(11, {"repasse_veiculado": 12000.00, "energia": 600.00,
+                                                    "internet_cameras": 240.00, "producao": 14800.00,
+                                                    "tap": 17000.00}, bv=0.20, comissao=0.05, inadimplencia=0.02),
+        "Botafogo - Real Grandeza": _tipo(11, {"repasse_fixo": 8000.00, "energia": 800.00,
+                                                "internet_cameras": 240.00, "producao": 9000.00,
+                                                "tap": 10040.00}, bv=0.20, comissao=0.05, inadimplencia=0.02),
+        "Botafogo - Praia de Botafogo": _tipo(11, {"repasse_fixo": 1000.00, "repasse_veiculado": 9000.00,
+                                                    "producao": 9000.00, "tap": 133000.00}, bv=0.20, comissao=0.05, inadimplencia=0.02),
+        "Centro - Paulo de Frontin": _tipo(11, {"repasse_veiculado": 5000.00, "producao": 5600.00,
+                                                 "tap": 5500.00}, bv=0.20, comissao=0.05, inadimplencia=0.02),
+        "Copacabana - Santa Clara": _tipo(11, {"repasse_veiculado": 15000.00, "producao": 8900.00,
+                                                "tap": 10600.00}, bv=0.20, comissao=0.05, inadimplencia=0.02),
+        "Leblon - Ataulfo de Paiva": _tipo(11, {"repasse_veiculado": 5000.00, "producao": 5100.00,
+                                                 "tap": 9500.00}, bv=0.20, comissao=0.05, inadimplencia=0.02),
+        "Maracanã - Av. Maracanã, 417": _tipo(11, {"repasse_veiculado": 10000.00, "producao": 6400.00,
+                                                    "tap": 7800.00}, bv=0.20, comissao=0.05, inadimplencia=0.02),
+        "Maracanã - Av. Maracanã, 515": _tipo(11, {"repasse_veiculado": 12000.00, "producao": 10150.00,
+                                                    "tap": 15000.00}, bv=0.20, comissao=0.05, inadimplencia=0.02),
+        "Maracanã - Av. Maracanã, 526": _tipo(11, {"repasse_veiculado": 5700.00, "producao": 6000.00,
+                                                    "tap": 4000.00}, bv=0.20, comissao=0.05, inadimplencia=0.02),
+        "Tijuca - Haddock Lobo": _tipo(11, {"repasse_veiculado": 4500.00, "producao": 5490.00,
+                                             "tap": 5000.00}, bv=0.20, comissao=0.05, inadimplencia=0.02),
+    },
+    # aba "Empena Digital Américas"
+    "Empena Digital Américas": {
+        "Cota Inteira": _tipo(8, {"repasse_fixo": 20000.00, "seguro": 167.50, "energia": 1000.00,
+                                   "internet_cameras": 125.00, "manutencao": 200.00, "tap": 12000.00},
+                               bv=0.20, comissao=0.05, inadimplencia=0.02),
+        "Meia Cota": _tipo(8, {"repasse_fixo": 3750.00, "seguro": 83.75, "energia": 500.00,
+                                "internet_cameras": 62.50, "manutencao": 100.00, "tap": 6000.00},
+                            bv=0.20, comissao=0.05, inadimplencia=0.02),
+    },
+    # aba "Empena Digital Tijuca"
+    "Empena Digital Tijuca": {
+        "Cota Inteira": _tipo(8, {"repasse_fixo": 6687.50, "painel_led": 5270.00, "energia": 1625.00,
+                                   "internet_cameras": 87.50, "seguro": 125.00, "tap": 4000.00},
+                               bv=0.20, comissao=0.05, inadimplencia=0.02),
+        "Meia Cota": _tipo(8, {"repasse_fixo": 3343.75, "painel_led": 2635.00, "energia": 812.50,
+                                "internet_cameras": 43.75, "seguro": 62.50, "tap": 2000.00},
+                            bv=0.20, comissao=0.05, inadimplencia=0.02),
+    },
+    # aba "Empena Digital Copacabana"
+    "Empena Digital Copacabana": {
+        "Cota Inteira": _tipo(8, {"repasse_fixo": 6687.50, "painel_led": 5187.50, "energia": 1000.00,
+                                   "internet_cameras": 125.00, "seguro": 125.00, "tap": 6500.00},
+                               bv=0.20, comissao=0.05, inadimplencia=0.02),
+        "Meia Cota": _tipo(8, {"repasse_fixo": 3343.75, "painel_led": 2593.75, "energia": 500.00,
+                                "internet_cameras": 62.50, "seguro": 62.50, "tap": 3250.00},
+                            bv=0.20, comissao=0.05, inadimplencia=0.02),
+    },
 }
 
 PERFIS = ["Executivo", "Gerente Comercial", "Diretor Comercial", "Diretor Financeiro"]
-TIPOS_COTA = ["Cota Inteira", "Meia Cota"]
 
 
 # ============================================================================
 # 2) MOTOR DE CÁLCULO (DRE, classificação estratégica e alçada)
 # ============================================================================
 
-def calcular_dre(valor_venda: float, tipo_cota: str, premissas_ativo: dict, regras: dict) -> dict:
-    """Reproduz a apuração de DRE por cota/meia-cota da planilha mestre."""
-    p = premissas_ativo[tipo_cota]
+def calcular_dre(valor_venda: float, tipo: str, premissas_ativo: dict, regras: dict) -> dict:
+    """Reproduz a apuração de DRE por cota/posição de cada ativo da planilha mestre."""
+    p = premissas_ativo[tipo]
     trib_receita = regras["tributos_receita"]
     trib_lucro = regras["tributos_lucro"]
 
@@ -133,7 +247,10 @@ def calcular_dre(valor_venda: float, tipo_cota: str, premissas_ativo: dict, regr
     iss = valor_venda * trib_receita["iss"]
     total_tributos_receita = pis + cofins + iss
 
-    repasse = p["repasse"]
+    # Repasse: a maioria dos ativos usa um valor fixo em R$ (já incluído em
+    # custos_fixos_diretos); alguns (ex. MUB Digital) usam um percentual do
+    # Valor de Venda, indicado em repasse_pct.
+    repasse_variavel = valor_venda * p.get("repasse_pct", 0.0)
     custos_fixos = p["custos_fixos_diretos"]
     total_custos_fixos = sum(custos_fixos.values())
 
@@ -141,20 +258,17 @@ def calcular_dre(valor_venda: float, tipo_cota: str, premissas_ativo: dict, regr
     comissao = valor_venda * p["comissao"]
     inadimplencia = valor_venda * p["inadimplencia"]
 
-    margem_bruta = valor_venda - total_tributos_receita - repasse - total_custos_fixos
+    margem_bruta = valor_venda - total_tributos_receita - repasse_variavel - total_custos_fixos
     resultado_operacional = margem_bruta - bv - comissao - inadimplencia
-
-    receita_liquida_impostos = valor_venda - total_tributos_receita
-    margem_contribuicao = valor_venda - total_tributos_receita - repasse - bv - comissao - inadimplencia
-    margem_contribuicao_pct = (margem_contribuicao / valor_venda) if valor_venda else 0.0
-    margem_ebitda_pct = (resultado_operacional / receita_liquida_impostos) if receita_liquida_impostos else 0.0
 
     # Adicional de IRPJ: na planilha mestre o limite de isenção mensal
     # (R$ 20.000) é apurado sobre o resultado CONSOLIDADO do ativo (todas
-    # as cotas) e depois rateado entre as unidades. Como esta calculadora
-    # avalia uma negociação por vez, aplicamos o mesmo limite já rateado
-    # proporcionalmente ao número de unidades do ativo (aproximação que
-    # assume portfólio simétrico — mesma lógica-base da planilha).
+    # as cotas/posições daquele tipo) e depois rateado entre as unidades.
+    # Como esta calculadora avalia uma negociação por vez, aplicamos o
+    # mesmo limite já rateado proporcionalmente ao número de unidades do
+    # ativo — lido diretamente do divisor da fórmula de cada aba
+    # (aproximação que assume portfólio simétrico, mesma lógica-base da
+    # planilha).
     limite_rateado = trib_lucro["limite_isencao_adicional_mensal"] / p["n_unidades_ativo"]
     irpj = resultado_operacional * trib_lucro["irpj"]
     excedente_adicional = max(0.0, resultado_operacional - limite_rateado)
@@ -164,29 +278,20 @@ def calcular_dre(valor_venda: float, tipo_cota: str, premissas_ativo: dict, regr
     lucro_liquido = resultado_operacional - irpj - adicional_irpj - csll
     margem_liquida_pct = (lucro_liquido / valor_venda) if valor_venda else 0.0
 
-    break_even = None
-    if margem_contribuicao_pct > 0:
-        break_even = (total_custos_fixos + irpj + adicional_irpj + csll) / margem_contribuicao_pct
-
     return {
         "valor_venda": valor_venda,
         "pis": pis, "cofins": cofins, "iss": iss,
         "total_tributos_receita": total_tributos_receita,
-        "repasse": repasse,
         "custos_fixos_diretos": custos_fixos,
         "total_custos_fixos": total_custos_fixos,
         "bv": bv, "comissao": comissao, "inadimplencia": inadimplencia,
         "margem_bruta": margem_bruta,
-        "margem_contribuicao": margem_contribuicao,
-        "margem_contribuicao_pct": margem_contribuicao_pct,
         "resultado_operacional": resultado_operacional,
-        "margem_ebitda_pct": margem_ebitda_pct,
         "irpj": irpj,
         "adicional_irpj": adicional_irpj,
         "csll": csll,
         "lucro_liquido": lucro_liquido,
         "margem_liquida_pct": margem_liquida_pct,
-        "break_even": break_even,
     }
 
 
@@ -335,18 +440,24 @@ with st.sidebar:
 
     st.divider()
     st.header("Dados da Negociação")
-    with st.form("form_negociacao"):
-        pi_numero = st.text_input("Nº do PI Negociado", placeholder="Ex.: PI-2026-0842")
-        ativo = st.selectbox("Ativo Negociado", list(ATIVOS.keys()), index=0)
-        tipo_cota = st.selectbox("Tipo de Cota", TIPOS_COTA, index=0)
-        valor_pi = st.number_input(
-            "Valor do PI Proposto (R$)",
-            min_value=0.0,
-            value=30000.0,
-            step=500.0,
-            format="%.2f",
-        )
-        calcular = st.form_submit_button("Calcular Autorização", width="stretch", type="primary")
+    # O seletor de "Ativo" fica fora de um st.form (que só atualiza os
+    # demais campos ao ser enviado) porque as opções de "Tipo / Posição"
+    # dependem do ativo escolhido — cada ativo tem seu próprio conjunto de
+    # tipos (ex.: "Cota Inteira"/"Meia Cota" nos painéis, mas nomes de
+    # imóvel nas Empenas Estáticas, ou "Face" no MUB Estático).
+    pi_numero = st.text_input("Nº do PI Negociado", placeholder="Ex.: PI-2026-0842")
+    ativo = st.selectbox("Ativo Negociado", list(ATIVOS.keys()), index=0, key="ativo_select")
+    tipos_disponiveis = list(ATIVOS[ativo].keys())
+    rotulo_tipo = "Tipo de Cota" if tipos_disponiveis in (["Cota Inteira", "Meia Cota"],) else "Tipo / Posição"
+    tipo_cota = st.selectbox(rotulo_tipo, tipos_disponiveis, index=0, key=f"tipo_select_{ativo}")
+    valor_pi = st.number_input(
+        "Valor do PI Proposto (R$)",
+        min_value=0.0,
+        value=30000.0,
+        step=500.0,
+        format="%.2f",
+    )
+    calcular = st.button("Calcular Autorização", width="stretch", type="primary")
 
     st.caption(
         "Os parâmetros de custo, tributos e alçadas usados no cálculo são "
