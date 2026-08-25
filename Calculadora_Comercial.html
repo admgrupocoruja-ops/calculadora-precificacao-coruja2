@@ -1,0 +1,1332 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Calculadora Comercial & Dashboard de Alçadas — Grupo Coruja</title>
+<style>
+/* ============================================================
+   DESIGN TOKENS — light/dark, per dataviz skill reference palette
+   ============================================================ */
+:root{
+  color-scheme: light;
+  --surface-1:      #fcfcfb;
+  --page-plane:     #f9f9f7;
+  --surface-raised: #ffffff;
+  --text-primary:   #0b0b0b;
+  --text-secondary: #52514e;
+  --text-muted:     #898781;
+  --gridline:       #e1e0d9;
+  --baseline:       #c3c2b7;
+  --border:         rgba(11,11,11,0.10);
+  --border-strong:  rgba(11,11,11,0.16);
+
+  /* categorical (fixed order, per palette.md) */
+  --cat-1: #2a78d6; /* blue */
+  --cat-2: #eb6834; /* orange */
+  --cat-3: #1baf7a; /* aqua/green */
+  --cat-4: #eda100; /* yellow */
+  --cat-5: #e87ba4; /* magenta */
+  --cat-6: #008300; /* green */
+  --cat-7: #4a3aa7; /* violet */
+  --cat-8: #e34948; /* red */
+
+  /* semantic: Entrada = teal family (marca), Saída = crimson family (marca) */
+  --entrada-solid:  #077f81; /* teal da marca — Realizado */
+  --entrada-tint:   #09a5a8; /* teal claro — Previsto */
+  --entrada-tint-bg: rgba(9,165,168,0.16);
+  --entrada-solid-bg: rgba(7,127,129,0.16);
+  --saida-solid:    #dc224a; /* crimson da marca — Realizado */
+  --saida-tint:     #e76380; /* rosa/coral — Previsto */
+  --saida-tint-bg:  rgba(231,99,128,0.18);
+  --saida-solid-bg: rgba(220,34,74,0.14);
+
+  --status-good: #0ca30c;
+  --status-warning: #fab219;
+  --status-serious: #ec835a;
+  --status-critical: #d03b3b;
+
+  /* brand — Grupo Coruja (cores extraídas do logo oficial) */
+  --brand-crimson:      #dc224a;
+  --brand-crimson-dark: #a51938;
+  --brand-teal:         #077f81;
+  --brand-teal-dark:    #055f61;
+  --brand-gray:         #5c5c5f;
+
+  --shadow-sm: 0 1px 2px rgba(11,11,11,0.06), 0 1px 1px rgba(11,11,11,0.04);
+  --shadow-md: 0 4px 16px rgba(11,11,11,0.08), 0 1px 3px rgba(11,11,11,0.06);
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --font-sans: system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+
+:root[data-theme="dark"]{
+  color-scheme: dark;
+  --surface-1:      #1a1a19;
+  --page-plane:     #0d0d0d;
+  --surface-raised: #232322;
+  --text-primary:   #ffffff;
+  --text-secondary: #c3c2b7;
+  --text-muted:     #898781;
+  --gridline:       #2c2c2a;
+  --baseline:       #383835;
+  --border:         rgba(255,255,255,0.10);
+  --border-strong:  rgba(255,255,255,0.18);
+
+  --cat-1: #3987e5;
+  --cat-2: #d95926;
+  --cat-3: #199e70;
+  --cat-4: #c98500;
+  --cat-5: #d55181;
+  --cat-6: #1fae1f;
+  --cat-7: #9085e9;
+  --cat-8: #e66767;
+
+  --entrada-solid:  #0ab2b5;
+  --entrada-tint:   #0bcbce;
+  --entrada-tint-bg: rgba(11,203,206,0.20);
+  --entrada-solid-bg: rgba(10,178,181,0.20);
+  --saida-solid:    #e44d6e;
+  --saida-tint:     #ea7992;
+  --saida-tint-bg:  rgba(234,121,146,0.20);
+  --saida-solid-bg: rgba(228,77,110,0.18);
+
+  --status-good: #0ca30c;
+  --status-warning: #fab219;
+  --status-serious: #ec835a;
+  --status-critical: #e66767;
+
+  --brand-crimson:      #e44d6e;
+  --brand-crimson-dark: #dc224a;
+  --brand-teal:         #0ab2b5;
+  --brand-teal-dark:    #077f81;
+  --brand-gray:         #9a9a9d;
+
+  --shadow-sm: 0 1px 2px rgba(0,0,0,0.30), 0 1px 1px rgba(0,0,0,0.20);
+  --shadow-md: 0 4px 20px rgba(0,0,0,0.45), 0 1px 3px rgba(0,0,0,0.30);
+}
+
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    color-scheme: dark;
+    --surface-1:      #1a1a19;
+    --page-plane:     #0d0d0d;
+    --surface-raised: #232322;
+    --text-primary:   #ffffff;
+    --text-secondary: #c3c2b7;
+    --text-muted:     #898781;
+    --gridline:       #2c2c2a;
+    --baseline:       #383835;
+    --border:         rgba(255,255,255,0.10);
+    --border-strong:  rgba(255,255,255,0.18);
+
+    --cat-1: #3987e5; --cat-2: #d95926; --cat-3: #199e70; --cat-4: #c98500;
+    --cat-5: #d55181; --cat-6: #1fae1f; --cat-7: #9085e9; --cat-8: #e66767;
+
+    --entrada-solid:  #0ca30c;
+    --entrada-tint:   #3987e5;
+    --entrada-tint-bg: rgba(57,135,229,0.20);
+    --entrada-solid-bg: rgba(12,163,12,0.20);
+    --saida-solid:    #e66767;
+    --saida-tint:     #d95926;
+    --saida-tint-bg:  rgba(217,89,38,0.20);
+    --saida-solid-bg: rgba(230,103,103,0.18);
+
+    --brand-crimson:      #e44d6e;
+    --brand-crimson-dark: #dc224a;
+    --brand-teal:         #0ab2b5;
+    --brand-teal-dark:    #077f81;
+    --brand-gray:         #9a9a9d;
+
+    --shadow-sm: 0 1px 2px rgba(0,0,0,0.30), 0 1px 1px rgba(0,0,0,0.20);
+    --shadow-md: 0 4px 20px rgba(0,0,0,0.45), 0 1px 3px rgba(0,0,0,0.30);
+  }
+}
+
+*, *::before, *::after{ box-sizing: border-box; }
+html,body{ height:100%; }
+body{
+  margin:0;
+  font-family: var(--font-sans);
+  background: var(--page-plane);
+  color: var(--text-primary);
+  -webkit-font-smoothing: antialiased;
+  transition: background-color .2s ease, color .2s ease;
+}
+::selection{ background: var(--entrada-tint); color:#fff; }
+
+a{ color: inherit; }
+button{ font-family: inherit; }
+
+.app{ max-width: 1440px; margin: 0 auto; padding: 20px 24px 64px; }
+
+/* ---------- Header ---------- */
+.app-header{
+  display:flex; align-items:center; justify-content:space-between; gap:16px;
+  flex-wrap: wrap;
+  margin-bottom: 20px;
+}
+.brand{ display:flex; align-items:center; gap:14px; }
+.brand-logo{
+  height:42px; width:auto; display:block; flex:none;
+  background:#fff; padding:6px 10px; border-radius: var(--radius-sm);
+  box-shadow: var(--shadow-sm); border:1px solid var(--border);
+}
+.brand-divider{ width:1px; height:34px; background:var(--border-strong); flex:none; }
+.brand-text h1{ font-size: 17px; margin:0; font-weight:700; letter-spacing:-0.01em; color:var(--text-primary); }
+.brand-text p{ margin:2px 0 0; font-size:12.5px; color: var(--text-secondary); }
+.brand-text .tagline{ font-size:10.5px; color: var(--brand-teal); font-style:italic; font-weight:600; }
+:root[data-theme="dark"] .brand-text .tagline{ color: var(--brand-teal); }
+
+.header-actions{ display:flex; align-items:center; gap:8px; flex-wrap: wrap; }
+
+.btn{
+  display:inline-flex; align-items:center; gap:6px;
+  padding: 9px 14px; border-radius: var(--radius-sm);
+  border: 1px solid var(--border-strong);
+  background: var(--surface-raised);
+  color: var(--text-primary);
+  font-size: 13px; font-weight: 600; cursor:pointer;
+  transition: transform .08s ease, box-shadow .15s ease, background .15s ease;
+  white-space: nowrap;
+}
+.btn:hover{ box-shadow: var(--shadow-sm); transform: translateY(-1px); }
+.btn:active{ transform: translateY(0); }
+.btn-primary{ background: var(--brand-crimson); border-color: var(--brand-crimson); color:#fff; }
+.btn-primary:hover{ filter: brightness(1.06); }
+.btn-ghost{ background: transparent; }
+.btn-icon{ width:38px; height:38px; padding:0; justify-content:center; }
+.btn svg{ width:15px; height:15px; flex:none; }
+.btn:disabled{ opacity:.45; cursor:not-allowed; transform:none; box-shadow:none; }
+
+input[type="file"]{ display:none; }
+
+/* ---------- KPI cards ---------- */
+.kpi-grid{
+  display:grid; grid-template-columns: repeat(5, 1fr); gap:14px; margin-bottom: 22px;
+}
+.kpi-card{
+  background: var(--surface-raised); border:1px solid var(--border);
+  border-radius: var(--radius-md); padding: 16px 18px;
+  box-shadow: var(--shadow-sm);
+  display:flex; flex-direction:column; gap:6px;
+  position: relative; overflow:hidden;
+}
+.kpi-card::before{
+  content:""; position:absolute; left:0; top:0; bottom:0; width:3px;
+  background: var(--kpi-accent, var(--text-muted));
+}
+.kpi-label{
+  font-size:11.5px; font-weight:700; text-transform:uppercase; letter-spacing:.04em;
+  color: var(--text-secondary); display:flex; align-items:center; gap:6px;
+}
+.kpi-value{ font-size: 24px; font-weight:800; letter-spacing:-0.02em; font-variant-numeric: tabular-nums; }
+.kpi-sub{ font-size:12px; color: var(--text-muted); display:flex; align-items:center; gap:8px; flex-wrap:wrap;}
+.kpi-sub .dot{ width:7px; height:7px; border-radius:50%; display:inline-block; margin-right:3px; }
+.kpi-card.k-realizado{ --kpi-accent: var(--entrada-solid); }
+.kpi-card.k-previsto{ --kpi-accent: var(--entrada-tint); }
+.kpi-card.k-entradas{ --kpi-accent: var(--entrada-solid); }
+.kpi-card.k-saidas{ --kpi-accent: var(--saida-solid); }
+.kpi-card.k-atraso{ --kpi-accent: var(--status-warning); }
+
+/* ---------- panels / charts grid ---------- */
+.panel{
+  background: var(--surface-raised); border:1px solid var(--border);
+  border-radius: var(--radius-md); padding: 16px 18px 12px; box-shadow: var(--shadow-sm);
+}
+.panel-head{ display:flex; align-items:center; justify-content:space-between; margin-bottom:10px; gap:8px; flex-wrap:wrap;}
+.panel-title{ font-size:13.5px; font-weight:700; }
+.panel-title .sub{ font-weight: 500; color: var(--text-muted); font-size: 11.5px; display:block; margin-top:1px;}
+.panel-legend{ display:flex; gap:12px; font-size:11.5px; color:var(--text-secondary); flex-wrap:wrap;}
+.legend-chip{ display:inline-flex; align-items:center; gap:5px; }
+.legend-chip .sw{ width:9px; height:9px; border-radius:2px; display:inline-block; }
+
+.charts-grid{
+  display:grid; grid-template-columns: 1.4fr 1fr; gap:14px; margin-bottom:14px;
+}
+.charts-grid-3{
+  display:grid; grid-template-columns: 1fr 1fr; gap:14px; margin-bottom:14px;
+}
+.charts-grid-agg{
+  display:grid; grid-template-columns: 1fr 1fr; gap:14px; margin-bottom:14px;
+}
+.chart-box{ position:relative; height: 260px; }
+.chart-box .empty-note{ position:absolute; inset:0; display:flex; align-items:center; justify-content:center; padding:20px; }
+.chart-box.tall{ height: 300px; }
+.chart-box.short{ height: 220px; }
+
+.empty-note{ font-size:12px; color:var(--text-muted); text-align:center; padding: 30px 10px;}
+
+/* ---------- filters bar ---------- */
+.filters-bar{
+  display:flex; align-items:center; gap:10px; flex-wrap:wrap;
+  background: var(--surface-raised); border:1px solid var(--border);
+  border-radius: var(--radius-md); padding: 12px 14px; margin-bottom: 14px;
+  box-shadow: var(--shadow-sm);
+}
+.field{ display:flex; flex-direction:column; gap:4px; }
+.field label{ font-size:10.5px; font-weight:700; text-transform:uppercase; color:var(--text-muted); letter-spacing:.03em;}
+.field select, .field input[type="date"], .field input[type="search"]{
+  border:1px solid var(--border-strong); border-radius: 7px; padding:7px 9px;
+  background: var(--surface-1); color: var(--text-primary); font-size:12.5px;
+  font-family: inherit; min-width: 92px;
+}
+.field input[type="search"]{ min-width: 220px; }
+.field select:focus, .field input:focus{ outline: 2px solid var(--entrada-tint); outline-offset:1px; }
+.chip-toggle{ display:flex; gap:6px; flex-wrap:wrap; }
+.chip-toggle button{
+  border:1px solid var(--border-strong); background:var(--surface-1); color:var(--text-secondary);
+  font-size:12px; font-weight:600; padding:7px 12px; border-radius:20px; cursor:pointer;
+  transition: background .12s ease, color .12s ease, border-color .12s ease;
+}
+.chip-toggle button:hover{ border-color: var(--entrada-tint); }
+.chip-toggle button.active{ background: var(--entrada-tint); border-color:var(--entrada-tint); color:#fff; }
+
+.company-bar{
+  display:flex; align-items:center; gap:12px; flex-wrap:wrap;
+  background: var(--surface-raised); border:1px solid var(--border);
+  border-radius: var(--radius-md); padding: 11px 16px; margin-bottom: 14px;
+  box-shadow: var(--shadow-sm);
+}
+.company-bar-label{
+  font-size:11.5px; font-weight:700; text-transform:uppercase; letter-spacing:.04em;
+  color: var(--text-secondary); white-space:nowrap;
+}
+.company-bar .chip-toggle button.active{ background: var(--brand-teal); border-color: var(--brand-teal); color:#fff; }
+.brand-stripe{ height:4px; background: linear-gradient(90deg, var(--brand-crimson), var(--brand-teal)); }
+.spacer{ flex:1; }
+.result-count{ font-size:12px; color:var(--text-muted); white-space:nowrap; }
+
+/* ---------- table ---------- */
+.table-wrap{ overflow-x:auto; border-radius: var(--radius-sm); }
+table.data-table{ width:100%; border-collapse:collapse; font-size:12.8px; min-width: 900px; }
+table.data-table thead th{
+  text-align:left; padding:10px 12px; font-size:11px; text-transform:uppercase;
+  letter-spacing:.03em; color:var(--text-secondary); border-bottom:1px solid var(--border-strong);
+  cursor:pointer; user-select:none; white-space:nowrap; position:sticky; top:0; background:var(--surface-raised);
+}
+table.data-table thead th:hover{ color: var(--text-primary); }
+table.data-table thead th .arrow{ margin-left:4px; opacity:.5; font-size:10px; }
+table.data-table tbody td{ padding:9px 12px; border-bottom:1px solid var(--gridline); font-variant-numeric: tabular-nums; }
+table.data-table tbody tr:hover{ background: var(--surface-1); }
+.badge{
+  display:inline-flex; align-items:center; gap:5px; padding:3px 9px; border-radius:20px;
+  font-size:11px; font-weight:700;
+}
+.badge.tipo-entrada{ background: var(--entrada-solid-bg); color: var(--entrada-solid); }
+.badge.tipo-saida{ background: var(--saida-solid-bg); color: var(--saida-solid); }
+.badge.status-realizado{ background: var(--entrada-solid-bg); color: var(--entrada-solid); }
+.badge.status-previsto{ background: var(--entrada-tint-bg); color: var(--entrada-tint); }
+.badge.status-atrasado{ background: rgba(250,178,25,0.20); color:#a16207; }
+:root[data-theme="dark"] .badge.status-atrasado{ color: var(--status-warning); }
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]) .badge.status-atrasado{ color: var(--status-warning); } }
+.val-pos{ color: var(--entrada-solid); font-weight:700; }
+.val-neg{ color: var(--saida-solid); font-weight:700; }
+
+.table-footer{ display:flex; align-items:center; justify-content:space-between; padding-top:10px; flex-wrap:wrap; gap:10px;}
+.pager{ display:flex; align-items:center; gap:6px; }
+.pager button{
+  border:1px solid var(--border-strong); background:var(--surface-1); color:var(--text-primary);
+  padding:6px 10px; border-radius:6px; cursor:pointer; font-size:12px;
+}
+.pager button:disabled{ opacity:.4; cursor:not-allowed; }
+.pager span{ font-size:12px; color:var(--text-secondary); padding:0 4px; }
+
+/* ---------- upload dropzone / empty state ---------- */
+.dropzone{
+  border: 2px dashed var(--border-strong); border-radius: var(--radius-lg);
+  padding: 48px 24px; text-align:center; background: var(--surface-raised);
+  margin-bottom: 20px;
+}
+.dropzone.dragover{ border-color: var(--entrada-tint); background: var(--entrada-tint-bg); }
+.dropzone h2{ margin:14px 0 6px; font-size:17px; }
+.dropzone p{ margin:0 0 18px; color:var(--text-secondary); font-size:13px; }
+.dropzone .dz-icon{ font-size:34px; }
+.dropzone .dz-owl{ width:150px; height:auto; margin:0 auto 8px; display:block; filter: drop-shadow(0 6px 14px rgba(220,34,74,0.25)); }
+.dz-actions{ display:flex; gap:10px; justify-content:center; flex-wrap:wrap; }
+.dz-hint{ margin-top:14px; font-size:11.5px; color: var(--text-muted); }
+
+.section{ display:none; }
+.section.visible{ display:block; }
+
+.toast{
+  position: fixed; bottom: 20px; right:20px; background: var(--text-primary); color: var(--surface-1);
+  padding: 11px 16px; border-radius: 8px; font-size:13px; box-shadow: var(--shadow-md);
+  opacity:0; transform: translateY(8px); transition: all .25s ease; pointer-events:none; z-index:999;
+  max-width: 320px;
+}
+.toast.show{ opacity:1; transform: translateY(0); }
+
+.top-list{ display:flex; flex-direction:column; gap:8px; }
+.top-row{ display:grid; grid-template-columns: 20px 1fr auto; gap:8px; align-items:center; font-size:12.5px;}
+.top-row .rank{ color:var(--text-muted); font-weight:700; font-size:11px;}
+.top-row .name{ overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.top-row .bar-track{ grid-column: 1 / -1; height:6px; border-radius:4px; background:var(--gridline); overflow:hidden; }
+.top-row .bar-fill{ height:100%; border-radius:4px; }
+.top-row .val{ font-weight:700; font-variant-numeric: tabular-nums; white-space:nowrap; }
+
+.footer-note{ text-align:center; color:var(--text-muted); font-size:11.5px; margin-top: 28px; }
+
+@media (max-width: 1180px){
+  .kpi-grid{ grid-template-columns: repeat(3, 1fr); }
+  .charts-grid, .charts-grid-3, .charts-grid-agg{ grid-template-columns: 1fr; }
+}
+@media (max-width: 720px){
+  .kpi-grid{ grid-template-columns: repeat(2, 1fr); }
+  .app{ padding: 14px 12px 48px; }
+  .filters-bar{ flex-direction:column; align-items:stretch; }
+  .field select, .field input{ min-width: 0; width:100%; }
+}
+@media (max-width: 420px){
+  .kpi-grid{ grid-template-columns: 1fr 1fr; }
+  .header-actions{ width:100%; }
+}
+
+/* ============================================================
+   ESTILOS ESPECÍFICOS — Calculadora Comercial & Dashboard de Alçadas
+   (complementa tokens-e-componentes-grupo-coruja.css)
+   ============================================================ */
+
+.header-sub-line{ display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
+
+/* ---------- formulário ---------- */
+.calc-panel{ margin-bottom:16px; }
+.calc-grid{
+  display:grid;
+  grid-template-columns: 1fr 1.3fr 1.3fr 1fr 1.2fr;
+  gap:14px;
+  align-items:end;
+}
+.calc-grid .field{ width:100%; }
+.calc-grid .field label{ display:flex; align-items:center; gap:5px; }
+.calc-grid select, .calc-grid input[type="text"], .calc-grid input[type="number"]{
+  border:1px solid var(--border-strong); border-radius:8px; padding:10px 11px;
+  background: var(--surface-1); color: var(--text-primary); font-size:13.5px;
+  font-family: inherit; width:100%;
+}
+.calc-grid select:disabled{ opacity:.5; cursor:not-allowed; }
+.calc-grid select:focus, .calc-grid input:focus{ outline:2px solid var(--entrada-tint); outline-offset:1px; }
+.field-hint{ font-size:10.5px; color:var(--text-muted); margin-top:2px; }
+.field-error{ font-size:10.5px; color: var(--saida-solid); margin-top:2px; min-height:13px; }
+.currency-wrap{ position:relative; }
+.currency-wrap .prefix{
+  position:absolute; left:11px; top:50%; transform:translateY(-50%);
+  font-size:13px; color:var(--text-muted); pointer-events:none;
+}
+.currency-wrap input{ padding-left:32px !important; font-variant-numeric: tabular-nums; }
+
+.calc-actions{ display:flex; justify-content:flex-end; margin-top:14px; }
+.calc-actions .btn-primary{ padding:11px 22px; font-size:13.5px; }
+
+/* ---------- status card (cores fixas conforme especificação) ---------- */
+.status-card{
+  display:flex; align-items:flex-start; gap:16px;
+  padding:20px 22px; border-radius: var(--radius-lg);
+  margin-bottom:18px; box-shadow: var(--shadow-sm);
+  border:1px solid transparent;
+}
+.status-card.status-ok{ background:#C6EFCE; color:#006100; border-color:rgba(0,97,0,0.18); }
+.status-card.status-fail{ background:#FFC7CE; color:#9C0006; border-color:rgba(156,0,6,0.18); }
+.status-card.status-empty{ background: var(--surface-raised); color: var(--text-secondary); border-color: var(--border); }
+.status-icon{ flex:none; width:38px; height:38px; }
+.status-icon svg{ width:100%; height:100%; }
+.status-body h2{ margin:0 0 4px; font-size:17px; font-weight:800; letter-spacing:-0.01em; }
+.status-body p{ margin:0; font-size:13px; line-height:1.5; }
+.status-body .status-meta{ display:flex; gap:16px; flex-wrap:wrap; margin-top:10px; font-size:12px; }
+.status-body .status-meta b{ font-weight:700; }
+
+/* ---------- KPIs extra accent ---------- */
+.kpi-card.k-neutral{ --kpi-accent: var(--brand-teal); }
+.kpi-card.k-alerta{ --kpi-accent: var(--status-warning); }
+.kpi-card.k-critico{ --kpi-accent: var(--saida-solid); }
+.kpi-card.k-positivo{ --kpi-accent: var(--entrada-solid); }
+
+/* ---------- badges de grupo estratégico ---------- */
+.badge-grupo-a{ background: var(--entrada-solid-bg); color: var(--entrada-solid); }
+.badge-grupo-b{ background: rgba(250,178,25,0.20); color:#a16207; }
+:root[data-theme="dark"] .badge-grupo-b{ color: var(--status-warning); }
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]) .badge-grupo-b{ color: var(--status-warning); } }
+.badge-grupo-c{ background: var(--saida-solid-bg); color: var(--saida-solid); }
+
+/* ---------- painel de estratégia ---------- */
+.estrategia-row{ display:flex; align-items:center; gap:12px; flex-wrap:wrap; margin-bottom:10px; }
+.estrategia-text{ font-size:13px; color: var(--text-secondary); line-height:1.55; }
+
+/* ---------- tabela DRE ---------- */
+.dre-table{ width:100%; border-collapse:collapse; font-size:13px; }
+.dre-table td{ padding:9px 4px; border-bottom:1px solid var(--gridline); font-variant-numeric: tabular-nums; }
+.dre-table td:last-child{ text-align:right; white-space:nowrap; font-weight:600; }
+.dre-table tr.dre-sub td{ color: var(--text-muted); font-size:12px; }
+.dre-table tr.dre-sub td:last-child{ color: var(--saida-solid); font-weight:500; }
+.dre-table tr.dre-total td{ border-bottom:none; border-top:2px solid var(--border-strong); font-weight:800; font-size:14px; padding-top:12px; }
+.dre-table tr.dre-total.positivo td:last-child{ color: var(--entrada-solid); }
+.dre-table tr.dre-total.negativo td:last-child{ color: var(--saida-solid); }
+.dre-table tr.dre-subtotal td{ font-weight:700; border-top:1px solid var(--border-strong); }
+
+.custos-itemizados{ margin-top:14px; padding-top:12px; border-top:1px dashed var(--border-strong); }
+.custos-itemizados h4{ margin:0 0 8px; font-size:11.5px; text-transform:uppercase; letter-spacing:.04em; color:var(--text-muted); font-weight:700; }
+.custos-itemizados ul{ list-style:none; margin:0; padding:0; display:grid; grid-template-columns:1fr 1fr; gap:6px 18px; }
+.custos-itemizados li{ display:flex; justify-content:space-between; font-size:12.5px; color:var(--text-secondary); gap:8px; }
+.custos-itemizados li b{ color:var(--text-primary); font-weight:700; font-variant-numeric: tabular-nums; }
+
+/* ---------- empty state do painel de resultados ---------- */
+.results-empty{
+  display:flex; flex-direction:column; align-items:center; justify-content:center;
+  text-align:center; padding:56px 24px; background: var(--surface-raised);
+  border:1px dashed var(--border-strong); border-radius: var(--radius-lg); color:var(--text-muted);
+}
+.results-empty svg{ width:40px; height:40px; opacity:.5; margin-bottom:12px; }
+.results-empty p{ margin:0; font-size:13px; max-width:360px; }
+
+.results-wrap{ display:none; }
+.results-wrap.visible{ display:block; }
+
+.disclaimer{
+  font-size:11.5px; color:var(--text-muted); line-height:1.6;
+  background: var(--surface-raised); border:1px solid var(--border); border-radius: var(--radius-md);
+  padding:14px 16px; margin-top:18px;
+}
+.disclaimer strong{ color:var(--text-secondary); }
+
+/* ---------- print ---------- */
+@media print{
+  .header-actions, .calc-panel .calc-actions, .btn-print{ display:none !important; }
+  body{ background:#fff; }
+  .panel, .kpi-card, .status-card{ box-shadow:none !important; border:1px solid #ccc !important; }
+}
+
+@media (max-width: 1180px){
+  .calc-grid{ grid-template-columns: 1fr 1fr 1fr; }
+}
+@media (max-width: 720px){
+  .calc-grid{ grid-template-columns: 1fr 1fr; }
+  .custos-itemizados ul{ grid-template-columns:1fr; }
+}
+@media (max-width: 480px){
+  .calc-grid{ grid-template-columns: 1fr; }
+  .status-card{ flex-direction:column; }
+}
+
+</style>
+</head>
+<body>
+<div class="brand-stripe"></div>
+<div class="app">
+
+  <header class="app-header">
+    <div class="brand">
+      <img class="brand-logo" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAATMAAABSCAYAAAA4hzMVAAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAAydpVFh0WE1MOmNvbS5hZG9iZS54bXAAAAAAADw/eHBhY2tldCBiZWdpbj0i77u/IiBpZD0iVzVNME1wQ2VoaUh6cmVTek5UY3prYzlkIj8+IDx4OnhtcG1ldGEgeG1sbnM6eD0iYWRvYmU6bnM6bWV0YS8iIHg6eG1wdGs9IkFkb2JlIFhNUCBDb3JlIDkuMS1jMDAxIDc5LjE0NjI4OTk3NzcsIDIwMjMvMDYvMjUtMjM6NTc6MTQgICAgICAgICI+IDxyZGY6UkRGIHhtbG5zOnJkZj0iaHR0cDovL3d3dy53My5vcmcvMTk5OS8wMi8yMi1yZGYtc3ludGF4LW5zIyI+IDxyZGY6RGVzY3JpcHRpb24gcmRmOmFib3V0PSIiIHhtbG5zOnhtcD0iaHR0cDovL25zLmFkb2JlLmNvbS94YXAvMS4wLyIgeG1sbnM6eG1wTU09Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC9tbS8iIHhtbG5zOnN0UmVmPSJodHRwOi8vbnMuYWRvYmUuY29tL3hhcC8xLjAvc1R5cGUvUmVzb3VyY2VSZWYjIiB4bXA6Q3JlYXRvclRvb2w9IkFkb2JlIFBob3Rvc2hvcCAyNS4wIChXaW5kb3dzKSIgeG1wTU06SW5zdGFuY2VJRD0ieG1wLmlpZDowQTM0OTMxQjIyM0QxMUYxODAyNkI3NzI1MTAyREZGMiIgeG1wTU06RG9jdW1lbnRJRD0ieG1wLmRpZDowQTM0OTMxQzIyM0QxMUYxODAyNkI3NzI1MTAyREZGMiI+IDx4bXBNTTpEZXJpdmVkRnJvbSBzdFJlZjppbnN0YW5jZUlEPSJ4bXAuaWlkOjBBMzQ5MzE5MjIzRDExRjE4MDI2Qjc3MjUxMDJERkYyIiBzdFJlZjpkb2N1bWVudElEPSJ4bXAuZGlkOjBBMzQ5MzFBMjIzRDExRjE4MDI2Qjc3MjUxMDJERkYyIi8+IDwvcmRmOkRlc2NyaXB0aW9uPiA8L3JkZjpSREY+IDwveDp4bXBtZXRhPiA8P3hwYWNrZXQgZW5kPSJyIj8+nFpctwAAJLpJREFUeNrs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" alt="Grupo Coruja">
+      <div class="brand-divider"></div>
+      <div class="brand-text">
+        <h1>Calculadora Comercial &amp; Dashboard de Alçadas</h1>
+        <p>Precificação, DRE automática e validação de alçada de desconto — Grupo Coruja</p>
+        <span class="tagline">Base: Premissas Comerciais &amp; Matriz de Negociação (Rascunho 04.08)</span>
+      </div>
+    </div>
+    <div class="header-actions">
+      <button class="btn btn-ghost btn-print" id="btnPrint" title="Imprimir / salvar em PDF">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9V2h12v7"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+        Imprimir
+      </button>
+      <button class="btn btn-icon btn-ghost" id="btnTheme" title="Alternar tema claro/escuro">
+        <svg id="iconTheme" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>
+      </button>
+    </div>
+  </header>
+
+  <!-- ============ FORMULÁRIO ============ -->
+  <section class="panel calc-panel">
+    <div class="panel-head">
+      <div class="panel-title">Dados da Negociação<span class="sub">Preencha os campos abaixo — o cálculo e a validação de alçada são atualizados automaticamente</span></div>
+    </div>
+
+    <div class="calc-grid">
+      <div class="field">
+        <label for="f-numeropi">Nº do PI</label>
+        <input type="text" id="f-numeropi" placeholder="Ex.: PI-2026-0842" autocomplete="off">
+        <div class="field-hint">Identificação interna (opcional)</div>
+      </div>
+
+      <div class="field">
+        <label for="f-perfil">Perfil do Solicitante</label>
+        <select id="f-perfil">
+          <option value="Executivo">Executivo Comercial</option>
+          <option value="Gerente">Gerente Comercial</option>
+          <option value="Diretor">Diretoria Financeira / CEO</option>
+        </select>
+        <div class="field-hint">Define a alçada disponível</div>
+      </div>
+
+      <div class="field">
+        <label for="f-ativo">Ativo Negociado</label>
+        <select id="f-ativo">
+          <option value="">Selecione o ativo…</option>
+        </select>
+        <div class="field-hint">15 ativos ativos da base comercial</div>
+      </div>
+
+      <div class="field">
+        <label for="f-cota">Cota / Praça</label>
+        <select id="f-cota" disabled>
+          <option value="">Selecione o ativo primeiro</option>
+        </select>
+        <div class="field-hint">Unidade específica negociada</div>
+      </div>
+
+      <div class="field">
+        <label for="f-tipocota">Tipo de Cota</label>
+        <select id="f-tipocota">
+          <option value="Cota Integral">Cota Integral</option>
+          <option value="Meia-Cota" disabled>Meia-Cota</option>
+        </select>
+        <div class="field-hint" id="hint-tipocota">Disponibilidade depende do ativo</div>
+      </div>
+    </div>
+
+    <div class="calc-grid" style="grid-template-columns: 1fr 3fr; margin-top:14px;">
+      <div class="field">
+        <label for="f-valor">Valor do PI Proposto</label>
+        <div class="currency-wrap">
+          <span class="prefix">R$</span>
+          <input type="number" id="f-valor" placeholder="0,00" min="0" step="0.01" inputmode="decimal">
+        </div>
+        <div class="field-error" id="err-valor"></div>
+      </div>
+      <div class="field" style="justify-content:flex-end;">
+        <div class="calc-actions">
+          <button class="btn btn-primary" id="btnCalcular">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+            Calcular Alçada
+          </button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ ESTADO VAZIO ============ -->
+  <div class="results-empty" id="emptyState">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="9" rx="1"/><rect x="14" y="3" width="7" height="5" rx="1"/><rect x="14" y="12" width="7" height="9" rx="1"/><rect x="3" y="16" width="7" height="5" rx="1"/></svg>
+    <p>Preencha os dados da negociação acima para ver o status de alçada, o DRE completo e os gráficos da operação.</p>
+  </div>
+
+  <!-- ============ RESULTADOS ============ -->
+  <div class="results-wrap" id="resultsWrap">
+
+    <div class="status-card" id="statusCard">
+      <div class="status-icon" id="statusIcon"></div>
+      <div class="status-body">
+        <h2 id="statusTitle">—</h2>
+        <p id="statusMsg">—</p>
+        <div class="status-meta">
+          <span>Nº do PI: <b id="metaNumeroPI">—</b></span>
+          <span>Solicitante: <b id="metaPerfil">—</b></span>
+          <span>Ativo / Cota: <b id="metaAtivoCota">—</b></span>
+          <span>Faixa aplicável: <b id="metaFaixa">—</b></span>
+          <span>Calculado em: <b id="metaData">—</b></span>
+        </div>
+      </div>
+    </div>
+
+    <div class="kpi-grid" id="kpiGrid">
+      <div class="kpi-card k-neutral">
+        <div class="kpi-label">Valor do PI Proposto</div>
+        <div class="kpi-value" id="kpiValorPI">—</div>
+        <div class="kpi-sub" id="kpiValorPISub">&nbsp;</div>
+      </div>
+      <div class="kpi-card k-neutral">
+        <div class="kpi-label">Preço de Tabela</div>
+        <div class="kpi-value" id="kpiPrecoTabela">—</div>
+        <div class="kpi-sub" id="kpiDesconto">&nbsp;</div>
+      </div>
+      <div class="kpi-card k-alerta">
+        <div class="kpi-label">Faixa / Alçada Necessária</div>
+        <div class="kpi-value" id="kpiFaixa">—</div>
+        <div class="kpi-sub" id="kpiFaixaSub">&nbsp;</div>
+      </div>
+      <div class="kpi-card k-neutral">
+        <div class="kpi-label">Margem Líquida</div>
+        <div class="kpi-value" id="kpiMargem">—</div>
+        <div class="kpi-sub" id="kpiMargemSub">&nbsp;</div>
+      </div>
+      <div class="kpi-card k-positivo">
+        <div class="kpi-label">Lucro Líquido</div>
+        <div class="kpi-value" id="kpiLucro">—</div>
+        <div class="kpi-sub" id="kpiGrupo">&nbsp;</div>
+      </div>
+    </div>
+
+    <div class="charts-grid">
+      <div class="panel">
+        <div class="panel-head">
+          <div class="panel-title">Termômetro de Alçada<span class="sub">Seu valor proposto contra as faixas de preço e o break-even do ativo</span></div>
+        </div>
+        <div class="chart-box tall"><canvas id="chartTermometro"></canvas></div>
+      </div>
+      <div class="panel">
+        <div class="panel-head">
+          <div class="panel-title">Composição do Resultado<span class="sub">Como o valor proposto se distribui até o lucro líquido</span></div>
+        </div>
+        <div class="chart-box tall"><canvas id="chartDRE"></canvas></div>
+      </div>
+    </div>
+
+    <div class="charts-grid" style="grid-template-columns: 1fr 1fr;">
+      <div class="panel">
+        <div class="panel-head">
+          <div class="panel-title">DRE da Operação<span class="sub">Demonstrativo de resultado do PI, do valor bruto ao lucro líquido</span></div>
+        </div>
+        <table class="dre-table">
+          <tbody id="dreBody"></tbody>
+        </table>
+        <div class="custos-itemizados" id="custosItemizadosBox" style="display:none;">
+          <h4 id="custosItemizadosTitulo">Detalhamento de Custos Fixos</h4>
+          <ul id="custosItemizadosLista"></ul>
+        </div>
+      </div>
+      <div class="panel">
+        <div class="panel-head">
+          <div class="panel-title">Estratégia Recomendada<span class="sub">Classificação estratégica do ativo/cota e orientação comercial</span></div>
+        </div>
+        <div class="estrategia-row">
+          <span class="badge" id="badgeGrupo">—</span>
+        </div>
+        <p class="estrategia-text" id="estrategiaTexto">—</p>
+        <table class="dre-table" style="margin-top:14px;">
+          <tbody id="faixasBody"></tbody>
+        </table>
+      </div>
+    </div>
+
+  </div>
+
+  <p class="disclaimer">
+    <strong>Notas metodológicas:</strong> os limites de alçada (Faixa 1 / Faixa 2 / Faixa 3 / Preço Mínimo) são extraídos diretamente da Matriz de Negociação do Grupo Coruja e refletem o preço necessário para atingir 35%, 25% e 15% de lucro líquido, respectivamente, por ativo e cota. O DRE exibido é calculado por operação (PI) isoladamente: o Adicional de IRPJ (10% sobre o excedente de R$ 20.000,00) é apurado sobre o resultado operacional desta operação, e não sobre o consolidado mensal de todas as cotas do ativo — para o fechamento fiscal oficial, utilize a apuração consolidada da Controladoria. Esta calculadora não substitui a aprovação formal de descontos abaixo da Faixa 3 ou abaixo do Break-Even, que permanecem NÃO PERMITIDOS nesta ferramenta.
+  </p>
+
+  <p class="footer-note">Grupo Coruja · Calculadora Comercial &amp; Dashboard de Alçadas · Uso interno</p>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+/* ==================================================================
+   MOTOR DE CÁLCULO — Calculadora Comercial & Dashboard de Alçadas
+   Grupo Coruja · Base de dados: Rascunho - 04.08.xlsx
+   (Premissas, Matriz de Negociação, abas BO- por ativo)
+   ================================================================== */
+
+/* ---------- PREMISSAS GERAIS (aba "Premissas") ---------- */
+const Premissas_Gerais = {
+  tributosReceita: { pis: 0.0165, cofins: 0.076, iss: 0.05 },
+  comercial: { bv: 0.20, comissaoExecutivo: 0.02, inadimplencia: 0.02 },
+  tributosLucro: { irpj: 0.15, adicionalIrpj: 0.10, limiteIsencaoAdicionalMensal: 20000, csll: 0.09 },
+  contrato: { prazoMesesPadrao: 12, cotasPorAtivoDigital: 8, ocupacaoAlvo: 0.85, precoMeiaCotaPctPadrao: 0.70 },
+  faixasLucro: { faixa1Executivo: 0.35, faixa2Gerente: 0.25, faixa3Diretoria: 0.15 },
+  classificacaoEstrategica: {
+    grupoA_lucroMinimo: 40000, grupoA_ticketMinimo: 100000,
+    grupoC_margemMaxima: 0.12, grupoC_lucroMaximo: 5000
+  }
+};
+
+/* ---------- PREMISSAS DO ATIVO-PILOTO (aba "Painel Jd Oceânico" / "BO - Painel Jd Oceânico") ---------- */
+const Premissas_Jd_Oceanico = {
+  ativo: "Painel Jd Oceânico",
+  cotasPorAtivo: 8,
+  custosFixosPorCota: {
+    "Repasse": 2200,
+    "Painel de LED": 2062.5,
+    "Energia": 1125,
+    "Internet e Câmeras": 150,
+    "TAP": 6250
+  },
+  custosFixosTotalPorCota: 11787.5
+};
+
+/* ---------- REGRAS DE ALÇADA + MATRIZ DE NEGOCIAÇÃO (todos os ativos ativos) ----------
+   Cada linha da matriz vem da aba "Matriz de Negociação", cruzada com a estrutura de
+   custos fixos exata de cada aba "BO - <Ativo>". Campos, na ordem:
+   [ativo, cota, precoTabela, precoSugerido, faixa1(35%), faixa2(25%), faixa3(15%),
+    precoMinimo(break-even), grupoEstrategico, estrategiaRecomendada, meiaCotaPermitida,
+    precoMeiaCotaSugerido, custosFixosPorCota] */
+const MATRIZ_CAMPOS = ["ativo","cota","precoTabela","precoSugerido","faixa1","faixa2","faixa3","precoMinimo","grupo","estrategia","meiaPermitida","precoMeia","custosFixos"];
+
+const MATRIZ_DADOS = [
+["Busdoor","Alpha - 110",4500.0,960.59,960.59,550.96,386.25,266.67,"C - Tático","Uso tático — reduzir ociosidade, nunca abaixo do Break-Even",false,null,18700.0],
+["Busdoor","Tijuquinha (Colou Pagou)",4500.0,2618.98,2618.98,717.73,435.75,289.36,"A - Gerador de Caixa","Preservar preço — desconto mínimo, negociação consultiva",false,null,25500.0],
+["Busdoor","Trell (Colou Pagou)",4500.0,3643.51,3643.51,998.49,585.96,389.11,"A - Gerador de Caixa","Preservar preço — desconto mínimo, negociação consultiva",false,null,34290.0],
+["Busdoor","Pendotiba (Colou Pagou)",4500.0,3643.51,3643.51,998.49,585.96,389.11,"A - Gerador de Caixa","Preservar preço — desconto mínimo, negociação consultiva",false,null,34290.0],
+["Busdoor","Vila Real (Colou Pagou)",4500.0,1395.14,1395.14,386.77,256.32,170.21,"A - Gerador de Caixa","Preservar preço — desconto mínimo, negociação consultiva",false,null,15000.0],
+["Painel Presidente Vargas",1,53000.0,17717.67,17717.67,8350.98,5462.93,3596.99,"B - Giro","Trabalhar ocupação e ancoragem — estimular novos anunciantes",true,12402.37,7556.25],
+["Painel Presidente Vargas",2,53000.0,17717.67,17717.67,8350.98,5462.93,3596.99,"B - Giro","Trabalhar ocupação e ancoragem — estimular novos anunciantes",true,12402.37,7556.25],
+["Painel Presidente Vargas",3,53000.0,17717.67,17717.67,8350.98,5462.93,3596.99,"B - Giro","Trabalhar ocupação e ancoragem — estimular novos anunciantes",true,12402.37,7556.25],
+["Painel Presidente Vargas",4,53000.0,17717.67,17717.67,8350.98,5462.93,3596.99,"B - Giro","Trabalhar ocupação e ancoragem — estimular novos anunciantes",true,12402.37,7556.25],
+["Painel Presidente Vargas",5,53000.0,17717.67,17717.67,8350.98,5462.93,3596.99,"B - Giro","Trabalhar ocupação e ancoragem — estimular novos anunciantes",true,12402.37,7556.25],
+["Painel Presidente Vargas",6,53000.0,17717.67,17717.67,8350.98,5462.93,3596.99,"B - Giro","Trabalhar ocupação e ancoragem — estimular novos anunciantes",true,12402.37,7556.25],
+["Painel Presidente Vargas",7,53000.0,17717.67,17717.67,8350.98,5462.93,3596.99,"B - Giro","Trabalhar ocupação e ancoragem — estimular novos anunciantes",true,12402.37,7556.25],
+["Painel Presidente Vargas",8,53000.0,17717.67,17717.67,8350.98,5462.93,3596.99,"B - Giro","Trabalhar ocupação e ancoragem — estimular novos anunciantes",true,12402.37,7556.25],
+["Painel Jd Oceânico",1,107000.0,55348.33,55348.33,34375.61,24929.33,17652.9,"B - Giro","Trabalhar ocupação e ancoragem — estimular novos anunciantes",true,38743.83,11787.5],
+["Painel Jd Oceânico",2,107000.0,102420.61,102420.61,48274.57,31579.6,20793.14,"C - Tático","Uso tático — reduzir ociosidade, nunca abaixo do Break-Even",false,null,11787.5],
+["Painel Jd Oceânico",3,107000.0,102420.61,102420.61,48274.57,31579.6,20793.14,"C - Tático","Uso tático — reduzir ociosidade, nunca abaixo do Break-Even",false,null,11787.5],
+["Painel Jd Oceânico",4,107000.0,102420.61,102420.61,48274.57,31579.6,20793.14,"C - Tático","Uso tático — reduzir ociosidade, nunca abaixo do Break-Even",false,null,11787.5],
+["Painel Jd Oceânico",5,107000.0,102420.61,102420.61,48274.57,31579.6,20793.14,"C - Tático","Uso tático — reduzir ociosidade, nunca abaixo do Break-Even",false,null,11787.5],
+["Painel Jd Oceânico",6,107000.0,102420.61,102420.61,48274.57,31579.6,20793.14,"C - Tático","Uso tático — reduzir ociosidade, nunca abaixo do Break-Even",false,null,11787.5],
+["Painel Jd Oceânico",7,107000.0,102420.61,102420.61,48274.57,31579.6,20793.14,"C - Tático","Uso tático — reduzir ociosidade, nunca abaixo do Break-Even",false,null,11787.5],
+["Painel Jd Oceânico",8,107000.0,102420.61,102420.61,48274.57,31579.6,20793.14,"C - Tático","Uso tático — reduzir ociosidade, nunca abaixo do Break-Even",false,null,11787.5],
+["MUB Estático",1,23000.0,25438.34,25438.34,12492.62,8279.26,5497.87,"C - Tático","Uso tático — reduzir ociosidade, nunca abaixo do Break-Even",false,null,2280.0],
+["MUB Estático",2,23000.0,25438.34,25438.34,12492.62,8279.26,5497.87,"C - Tático","Uso tático — reduzir ociosidade, nunca abaixo do Break-Even",false,null,2280.0],
+["MUB Estático",3,23000.0,25438.34,25438.34,12492.62,8279.26,5497.87,"C - Tático","Uso tático — reduzir ociosidade, nunca abaixo do Break-Even",false,null,2280.0],
+["MUB Estático",4,23000.0,25438.34,25438.34,12492.62,8279.26,5497.87,"C - Tático","Uso tático — reduzir ociosidade, nunca abaixo do Break-Even",false,null,2280.0],
+["MUB Digital",1,35000.0,240314.54,240314.54,30260.86,16147.06,9500.47,"C - Tático","Uso tático — reduzir ociosidade, nunca abaixo do Break-Even",false,null,1425.0],
+["MUB Digital",2,35000.0,240314.54,240314.54,30260.86,16147.06,9500.47,"C - Tático","Uso tático — reduzir ociosidade, nunca abaixo do Break-Even",false,null,1425.0],
+["MUB Digital",3,35000.0,3665.95,3665.95,461.62,246.32,144.93,"C - Tático","Uso tático — reduzir ociosidade, nunca abaixo do Break-Even",false,null,1425.0],
+["MUB Digital",4,35000.0,3665.95,3665.95,461.62,246.32,144.93,"C - Tático","Uso tático — reduzir ociosidade, nunca abaixo do Break-Even",false,null,1425.0],
+["MUB Digital",5,35000.0,3665.95,3665.95,461.62,246.32,144.93,"C - Tático","Uso tático — reduzir ociosidade, nunca abaixo do Break-Even",false,null,1425.0],
+["MUB Digital",6,35000.0,3665.95,3665.95,461.62,246.32,144.93,"C - Tático","Uso tático — reduzir ociosidade, nunca abaixo do Break-Even",false,null,1425.0],
+["MUB Digital",7,35000.0,3665.95,3665.95,461.62,246.32,144.93,"C - Tático","Uso tático — reduzir ociosidade, nunca abaixo do Break-Even",false,null,1425.0],
+["MUB Digital",8,35000.0,3665.95,3665.95,461.62,246.32,144.93,"C - Tático","Uso tático — reduzir ociosidade, nunca abaixo do Break-Even",false,null,1425.0],
+["Envelopamento - Rio 2","Envelopamento Rio2 1",295000.0,133777.62,133777.62,64800.76,42755.61,28309.38,"C - Tático","Uso tático — reduzir ociosidade, nunca abaixo do Break-Even",false,null,6300.0],
+["Envelopamento - Rio 2","Envelopamento Rio2 2",295000.0,108699.29,108699.29,52653.03,34740.52,23002.42,"C - Tático","Uso tático — reduzir ociosidade, nunca abaixo do Break-Even",false,null,6300.0],
+["Envelopamento - Rio 2","Envelopamento Rio2 3",295000.0,108699.29,108699.29,52653.03,34740.52,23002.42,"C - Tático","Uso tático — reduzir ociosidade, nunca abaixo do Break-Even",false,null,6300.0],
+["Envelopamento - Rio 2","Envelopamento Rio2 4",295000.0,108699.29,108699.29,52653.03,34740.52,23002.42,"C - Tático","Uso tático — reduzir ociosidade, nunca abaixo do Break-Even",false,null,6300.0],
+["Envelopamento - Rio 2","Envelopamento Rio2 5",295000.0,108699.29,108699.29,52653.03,34740.52,23002.42,"C - Tático","Uso tático — reduzir ociosidade, nunca abaixo do Break-Even",false,null,6300.0],
+["Envelopamento - Rio 2","Envelopamento Rio2 6",295000.0,108699.29,108699.29,52653.03,34740.52,23002.42,"C - Tático","Uso tático — reduzir ociosidade, nunca abaixo do Break-Even",false,null,6300.0],
+["Envelopamento - Rio 2","Envelopamento Rio2 7",295000.0,108699.29,108699.29,52653.03,34740.52,23002.42,"C - Tático","Uso tático — reduzir ociosidade, nunca abaixo do Break-Even",false,null,6300.0],
+["Envelopamento - Rio 2","Envelopamento Rio2 8",295000.0,108699.29,108699.29,52653.03,34740.52,23002.42,"C - Tático","Uso tático — reduzir ociosidade, nunca abaixo do Break-Even",false,null,6300.0],
+["Envelopamento - Rio 2","Envelopamento Rio2 9",295000.0,108699.29,108699.29,52653.03,34740.52,23002.42,"C - Tático","Uso tático — reduzir ociosidade, nunca abaixo do Break-Even",false,null,6300.0],
+["Envelopamento - Rio 2","Envelopamento Rio2 10",295000.0,108699.29,108699.29,52653.03,34740.52,23002.42,"C - Tático","Uso tático — reduzir ociosidade, nunca abaixo do Break-Even",false,null,6300.0],
+["Envelopamento - Rio 2","Envelopamento Rio2 11",295000.0,108699.29,108699.29,52653.03,34740.52,23002.42,"C - Tático","Uso tático — reduzir ociosidade, nunca abaixo do Break-Even",false,null,6300.0],
+["Envelopamento - Rio 2","Envelopamento Rio2 12",295000.0,108699.29,108699.29,52653.03,34740.52,23002.42,"C - Tático","Uso tático — reduzir ociosidade, nunca abaixo do Break-Even",false,null,6300.0],
+["Envelopamento - Rio 2","Envelopamento Rio2 13",295000.0,108699.29,108699.29,52653.03,34740.52,23002.42,"C - Tático","Uso tático — reduzir ociosidade, nunca abaixo do Break-Even",false,null,6300.0],
+["Envelopamento - Rio 2","Envelopamento Rio2 14",295000.0,108699.29,108699.29,52653.03,34740.52,23002.42,"C - Tático","Uso tático — reduzir ociosidade, nunca abaixo do Break-Even",false,null,6300.0],
+["Envelopamento - Rio 2","Envelopamento Rio2 15",295000.0,108699.29,108699.29,52653.03,34740.52,23002.42,"C - Tático","Uso tático — reduzir ociosidade, nunca abaixo do Break-Even",false,null,6300.0],
+["Envelopamento - Rio 2","Envelopamento Rio2 16",295000.0,108699.29,108699.29,52653.03,34740.52,23002.42,"C - Tático","Uso tático — reduzir ociosidade, nunca abaixo do Break-Even",false,null,6300.0],
+["Envelopamento - Rio 2","Envelopamento Rio2 17",295000.0,108699.29,108699.29,52653.03,34740.52,23002.42,"C - Tático","Uso tático — reduzir ociosidade, nunca abaixo do Break-Even",false,null,6300.0],
+["Envelopamento - Rio 2","Envelopamento Rio2 18",295000.0,108699.29,108699.29,52653.03,34740.52,23002.42,"C - Tático","Uso tático — reduzir ociosidade, nunca abaixo do Break-Even",false,null,6300.0],
+["Envelopamento - Rio 2","Envelopamento Rio2 19",295000.0,108699.29,108699.29,52653.03,34740.52,23002.42,"C - Tático","Uso tático — reduzir ociosidade, nunca abaixo do Break-Even",false,null,6300.0],
+["Envelopamento - Rio 2","Envelopamento Rio2 20",295000.0,108699.29,108699.29,52653.03,34740.52,23002.42,"C - Tático","Uso tático — reduzir ociosidade, nunca abaixo do Break-Even",false,null,6300.0],
+["Envelopamento - Rio 2","Envelopamento Rio2 21",295000.0,108699.29,108699.29,52653.03,34740.52,23002.42,"C - Tático","Uso tático — reduzir ociosidade, nunca abaixo do Break-Even",false,null,6300.0],
+["Envelopamento - Rio 2","Envelopamento Rio2 22",295000.0,108699.29,108699.29,52653.03,34740.52,23002.42,"C - Tático","Uso tático — reduzir ociosidade, nunca abaixo do Break-Even",false,null,6300.0],
+["Envelopamento - Rio 2","Envelopamento Rio2 23",295000.0,108699.29,108699.29,52653.03,34740.52,23002.42,"C - Tático","Uso tático — reduzir ociosidade, nunca abaixo do Break-Even",false,null,6300.0],
+["Envelopamento - BRT","Envelopamento Estação",500000.0,1107899.16,1107899.16,498535.58,321632.29,211063.83,"A - Gerador de Caixa","Preservar preço — desconto mínimo, negociação consultiva",false,null,124000.0],
+["Envelopamento - BRT","Envelopamento Articulado",387000.0,254423.22,254423.22,114486.08,74333.9,49361.7,"A - Gerador de Caixa","Preservar preço — desconto mínimo, negociação consultiva",false,null,29000.0],
+["Envelopamento - BRT","Envelopamento Padron",80000.0,128647.82,128647.82,58015.27,38448.57,25531.91,"B - Giro","Trabalhar ocupação e ancoragem — estimular novos anunciantes",true,90053.48,15000.0],
+["Envelopamento - BRT","Envelopamento Urbano",80000.0,92711.99,92711.99,42544.53,28195.62,18723.4,"B - Giro","Trabalhar ocupação e ancoragem — estimular novos anunciantes",true,64898.4,11000.0],
+["Envelopamento - Península","Envelopamento Península 1",20000.0,80129.67,80129.67,37949.99,24862.53,16386.14,"C - Tático","Uso tático — reduzir ociosidade, nunca abaixo do Break-Even",false,null,9250.0],
+["Envelopamento - Península","Envelopamento Península 2",20000.0,83086.14,83086.14,39350.2,25779.86,16990.72,"C - Tático","Uso tático — reduzir ociosidade, nunca abaixo do Break-Even",false,null,9600.0],
+["Envelopamento - Península","Envelopamento Península 3",20000.0,83086.14,83086.14,39350.2,25779.86,16990.72,"C - Tático","Uso tático — reduzir ociosidade, nunca abaixo do Break-Even",false,null,9600.0],
+["Envelopamento - Península","Envelopamento Península 4",20000.0,83086.14,83086.14,39350.2,25779.86,16990.72,"C - Tático","Uso tático — reduzir ociosidade, nunca abaixo do Break-Even",false,null,9600.0],
+["Envelopamento - Península","Envelopamento Península 5",20000.0,83086.14,83086.14,39350.2,25779.86,16990.72,"C - Tático","Uso tático — reduzir ociosidade, nunca abaixo do Break-Even",false,null,9600.0],
+["Envelopamento - Península","Envelopamento Península 6",20000.0,83086.14,83086.14,39350.2,25779.86,16990.72,"C - Tático","Uso tático — reduzir ociosidade, nunca abaixo do Break-Even",false,null,9600.0],
+["Envelopamento - Península","Envelopamento Península 7",20000.0,83086.14,83086.14,39350.2,25779.86,16990.72,"C - Tático","Uso tático — reduzir ociosidade, nunca abaixo do Break-Even",false,null,9600.0],
+["Envelopamento - Península","Envelopamento Península 8",20000.0,83086.14,83086.14,39350.2,25779.86,16990.72,"C - Tático","Uso tático — reduzir ociosidade, nunca abaixo do Break-Even",false,null,9600.0],
+["Envelopamento - Península","Envelopamento Península 9",20000.0,83086.14,83086.14,39350.2,25779.86,16990.72,"C - Tático","Uso tático — reduzir ociosidade, nunca abaixo do Break-Even",false,null,9600.0],
+["Envelopamento - Fretado","Envelopamento Fretado",295000.0,532715.23,532715.23,145989.11,85868.47,57021.28,"A - Gerador de Caixa","Preservar preço — desconto mínimo, negociação consultiva",false,null,31000.0],
+["Envelopamento - Frames","Envelopamento Frames 1",295000.0,91105.09,91105.09,40610.69,26914.0,17872.34,"C - Tático","Uso tático — reduzir ociosidade, nunca abaixo do Break-Even",false,null,7500.0],
+["Envelopamento - Frames","Envelopamento Frames 2",295000.0,91105.09,91105.09,40610.69,26914.0,17872.34,"C - Tático","Uso tático — reduzir ociosidade, nunca abaixo do Break-Even",false,null,7500.0],
+["Envelopamento - Frames","Envelopamento Frames 3",295000.0,91105.09,91105.09,40610.69,26914.0,17872.34,"C - Tático","Uso tático — reduzir ociosidade, nunca abaixo do Break-Even",false,null,7500.0],
+["Envelopamento - Barra Bali","Envelopamento Barra Bali 1",20000.0,105629.94,105629.94,50608.84,33275.9,21982.68,"C - Tático","Uso tático — reduzir ociosidade, nunca abaixo do Break-Even",false,null,6530.77],
+["Envelopamento - Barra Bali","Envelopamento Barra Bali 2",20000.0,105629.94,105629.94,50608.84,33275.9,21982.68,"C - Tático","Uso tático — reduzir ociosidade, nunca abaixo do Break-Even",false,null,6530.77],
+["Envelopamento - Barra Bali","Envelopamento Barra Bali 3",20000.0,105629.94,105629.94,50608.84,33275.9,21982.68,"C - Tático","Uso tático — reduzir ociosidade, nunca abaixo do Break-Even",false,null,6530.77],
+["Envelopamento - Barra Bali","Envelopamento Barra Bali 4",20000.0,105629.94,105629.94,50608.84,33275.9,21982.68,"C - Tático","Uso tático — reduzir ociosidade, nunca abaixo do Break-Even",false,null,6530.77],
+["Envelopamento - Barra Bali","Envelopamento Barra Bali 5",20000.0,105629.94,105629.94,50608.84,33275.9,21982.68,"C - Tático","Uso tático — reduzir ociosidade, nunca abaixo do Break-Even",false,null,6530.77],
+["Envelopamento - Barra Bali","Envelopamento Barra Bali 6",20000.0,105629.94,105629.94,50608.84,33275.9,21982.68,"C - Tático","Uso tático — reduzir ociosidade, nunca abaixo do Break-Even",false,null,6530.77],
+["Envelopamento - Barra Bali","Envelopamento Barra Bali 7",20000.0,105629.94,105629.94,50608.84,33275.9,21982.68,"C - Tático","Uso tático — reduzir ociosidade, nunca abaixo do Break-Even",false,null,6530.77],
+["Envelopamento - Barra Bali","Envelopamento Barra Bali 8",20000.0,105629.94,105629.94,50608.84,33275.9,21982.68,"C - Tático","Uso tático — reduzir ociosidade, nunca abaixo do Break-Even",false,null,6530.77],
+["Envelopamento - Barra Bali","Envelopamento Barra Bali 9",20000.0,105629.94,105629.94,50608.84,33275.9,21982.68,"C - Tático","Uso tático — reduzir ociosidade, nunca abaixo do Break-Even",false,null,6530.77],
+["Envelopamento - Barra Bali","Envelopamento Barra Bali 10",20000.0,105629.94,105629.94,50608.84,33275.9,21982.68,"C - Tático","Uso tático — reduzir ociosidade, nunca abaixo do Break-Even",false,null,6530.77],
+["Envelopamento - Barra Bali","Envelopamento Barra Bali 11",20000.0,105629.94,105629.94,50608.84,33275.9,21982.68,"C - Tático","Uso tático — reduzir ociosidade, nunca abaixo do Break-Even",false,null,6530.77],
+["Envelopamento - Barra Bali","Envelopamento Barra Bali 12",20000.0,105629.94,105629.94,50608.84,33275.9,21982.68,"C - Tático","Uso tático — reduzir ociosidade, nunca abaixo do Break-Even",false,null,6530.77],
+["Envelopamento - Barra Bali","Envelopamento Barra Bali 13",20000.0,105629.94,105629.94,50608.84,33275.9,21982.68,"C - Tático","Uso tático — reduzir ociosidade, nunca abaixo do Break-Even",false,null,6530.77],
+["Empenas Estáticas","Empena Estática - Barra - Jardim Oceânico",190000.0,246279.13,246279.13,117444.49,77255.99,51302.13,"A - Gerador de Caixa","Preservar preço — desconto mínimo, negociação consultiva",false,null,30140.0],
+["Empenas Estáticas","Empena Estática - Botafogo -Álvaro Rodrigues",160000.0,193230.62,193230.62,92146.95,60748.74,40340.43,"C - Tático","Uso tático — reduzir ociosidade, nunca abaixo do Break-Even",false,null,23700.0],
+["Empenas Estáticas","Empena Estática - Botafogo -General Polidoro",310000.0,365720.67,365720.67,174403.23,114503.6,75982.98,"C - Tático","Uso tático — reduzir ociosidade, nunca abaixo do Break-Even",false,null,44640.0],
+["Empenas Estáticas","Empena Estática - Botafogo -Praia de Botafogo",350000.0,1250082.27,1250082.27,596133.63,391388.65,258723.4,"C - Tático","Uso tático — reduzir ociosidade, nunca abaixo do Break-Even",false,null,30500.0],
+["Empenas Estáticas","Empena Estática - Centro - Paulo de Frontin",150000.0,130626.78,130626.78,62292.71,41268.13,27404.26,"A - Gerador de Caixa","Preservar preço — desconto mínimo, negociação consultiva",false,null,16100.0],
+["Empenas Estáticas","Empena Estática - Copacabana - Santa Clara",230000.0,282193.97,282193.97,134571.39,88431.7,58723.4,"A - Gerador de Caixa","Preservar preço — desconto mínimo, negociação consultiva",false,null,34500.0],
+["Empenas Estáticas","Empena Estática - Leblon -Ataulfo de Paiva",160000.0,159457.49,159457.49,76041.37,50239.46,33361.7,"A - Gerador de Caixa","Preservar preço — desconto mínimo, negociação consultiva",false,null,19600.0],
+["Empenas Estáticas","Empena Estática - Maracanã - Av. Maracanã, 417",165000.0,197349.29,197349.29,94111.05,62030.35,41191.49,"B - Giro","Trabalhar ocupação e ancoragem — estimular novos anunciantes",true,138144.5,24200.0],
+["Empenas Estáticas","Empena Estática - Maracanã - Av. Maracanã, 515",160000.0,304022.94,304022.94,144981.1,95224.28,63234.04,"B - Giro","Trabalhar ocupação e ancoragem — estimular novos anunciantes",true,212816.06,37150.0],
+["Empenas Estáticas","Empena Estática - Maracanã - Av. Maracanã, 526",96000.0,127331.84,127331.84,60722.65,40242.83,26723.4,"B - Giro","Trabalhar ocupação e ancoragem — estimular novos anunciantes",true,89132.29,15700.0],
+["Empenas Estáticas","Empena Estática - Tijuca - Haddock Lobo",107000.0,121483.32,121483.32,57976.59,38422.93,25514.89,"B - Giro","Trabalhar ocupação e ancoragem — estimular novos anunciantes",true,85038.32,14990.0],
+["Empena Digital Américas",1,430000.0,403298.84,403298.84,190089.48,124350.11,81876.58,"A - Gerador de Caixa","Preservar preço — desconto mínimo, negociação consultiva",false,null,20992.5],
+["Empena Digital Américas",2,430000.0,403298.84,403298.84,190089.48,124350.11,81876.58,"A - Gerador de Caixa","Preservar preço — desconto mínimo, negociação consultiva",false,null,20992.5],
+["Empena Digital Américas",3,430000.0,403298.84,403298.84,190089.48,124350.11,81876.58,"A - Gerador de Caixa","Preservar preço — desconto mínimo, negociação consultiva",false,null,20992.5],
+["Empena Digital Américas",4,430000.0,232811.64,232811.64,109732.63,71783.38,47264.75,"A - Gerador de Caixa","Preservar preço — desconto mínimo, negociação consultiva",false,null,20992.5],
+["Empena Digital Américas",5,430000.0,232811.64,232811.64,109732.63,71783.38,47264.75,"A - Gerador de Caixa","Preservar preço — desconto mínimo, negociação consultiva",false,null,20992.5],
+["Empena Digital Américas",6,430000.0,232811.64,232811.64,109732.63,71783.38,47264.75,"A - Gerador de Caixa","Preservar preço — desconto mínimo, negociação consultiva",false,null,20992.5],
+["Empena Digital Américas",7,430000.0,232811.64,232811.64,109732.63,71783.38,47264.75,"A - Gerador de Caixa","Preservar preço — desconto mínimo, negociação consultiva",false,null,20992.5],
+["Empena Digital Américas",8,430000.0,232811.64,232811.64,109732.63,71783.38,47264.75,"A - Gerador de Caixa","Preservar preço — desconto mínimo, negociação consultiva",false,null,20992.5],
+["Empena Digital Tijuca",1,462000.0,270788.79,270788.79,127632.65,83492.97,54974.77,"C - Tático","Uso tático — reduzir ociosidade, nunca abaixo do Break-Even",false,null,17670.0],
+["Empena Digital Tijuca",2,462000.0,270788.79,270788.79,127632.65,83492.97,54974.77,"C - Tático","Uso tático — reduzir ociosidade, nunca abaixo do Break-Even",false,null,17670.0],
+["Empena Digital Tijuca",3,462000.0,251429.17,251429.17,118507.75,77523.77,51044.43,"A - Gerador de Caixa","Preservar preço — desconto mínimo, negociação consultiva",false,null,17670.0],
+["Empena Digital Tijuca",4,462000.0,251429.17,251429.17,118507.75,77523.77,51044.43,"A - Gerador de Caixa","Preservar preço — desconto mínimo, negociação consultiva",false,null,17670.0],
+["Empena Digital Tijuca",5,462000.0,251429.17,251429.17,118507.75,77523.77,51044.43,"A - Gerador de Caixa","Preservar preço — desconto mínimo, negociação consultiva",false,null,17670.0],
+["Empena Digital Tijuca",6,462000.0,251429.17,251429.17,118507.75,77523.77,51044.43,"A - Gerador de Caixa","Preservar preço — desconto mínimo, negociação consultiva",false,null,17670.0],
+["Empena Digital Tijuca",7,462000.0,251429.17,251429.17,118507.75,77523.77,51044.43,"A - Gerador de Caixa","Preservar preço — desconto mínimo, negociação consultiva",false,null,17670.0],
+["Empena Digital Tijuca",8,462000.0,251429.17,251429.17,118507.75,77523.77,51044.43,"A - Gerador de Caixa","Preservar preço — desconto mínimo, negociação consultiva",false,null,17670.0],
+["Empena Digital Copacabana",1,430000.0,309807.22,309807.22,146023.46,95523.61,62896.18,"A - Gerador de Caixa","Preservar preço — desconto mínimo, negociação consultiva",false,null,19500.0],
+["Empena Digital Copacabana",2,430000.0,309807.22,309807.22,146023.46,95523.61,62896.18,"A - Gerador de Caixa","Preservar preço — desconto mínimo, negociação consultiva",false,null,19500.0],
+["Empena Digital Copacabana",3,430000.0,309807.22,309807.22,146023.46,95523.61,62896.18,"A - Gerador de Caixa","Preservar preço — desconto mínimo, negociação consultiva",false,null,19500.0],
+["Empena Digital Copacabana",4,430000.0,309807.22,309807.22,146023.46,95523.61,62896.18,"A - Gerador de Caixa","Preservar preço — desconto mínimo, negociação consultiva",false,null,19500.0],
+["Empena Digital Copacabana",5,430000.0,309807.22,309807.22,146023.46,95523.61,62896.18,"A - Gerador de Caixa","Preservar preço — desconto mínimo, negociação consultiva",false,null,19500.0],
+["Empena Digital Copacabana",6,430000.0,309807.22,309807.22,146023.46,95523.61,62896.18,"A - Gerador de Caixa","Preservar preço — desconto mínimo, negociação consultiva",false,null,19500.0],
+["Empena Digital Copacabana",7,430000.0,309807.22,309807.22,146023.46,95523.61,62896.18,"A - Gerador de Caixa","Preservar preço — desconto mínimo, negociação consultiva",false,null,19500.0],
+["Empena Digital Copacabana",8,430000.0,309807.22,309807.22,146023.46,95523.61,62896.18,"A - Gerador de Caixa","Preservar preço — desconto mínimo, negociação consultiva",false,null,19500.0]
+];
+
+const Regras_Alcadas = {
+  perfis: ["Executivo", "Gerente", "Diretor"],
+  hierarquia: { "Executivo": 1, "Gerente": 2, "Diretor": 3 },
+  faixaMeta: {
+    1: { perfilNecessario: "Executivo", rotulo: "Faixa 1 · Executivo Comercial", pct: 0.35 },
+    2: { perfilNecessario: "Gerente",   rotulo: "Faixa 2 · Gerente Comercial",   pct: 0.25 },
+    3: { perfilNecessario: "Diretor",   rotulo: "Faixa 3 · Diretoria / CEO",     pct: 0.15 },
+    0: { perfilNecessario: null,        rotulo: "Abaixo da Faixa 3 — NÃO PERMITIDO", pct: null }
+  },
+  ativosOrdenados: [
+    "Busdoor", "Painel Presidente Vargas", "Painel Jd Oceânico", "MUB Estático", "MUB Digital",
+    "Envelopamento - Rio 2", "Envelopamento - BRT", "Envelopamento - Península", "Envelopamento - Fretado",
+    "Envelopamento - Frames", "Envelopamento - Barra Bali", "Empenas Estáticas",
+    "Empena Digital Américas", "Empena Digital Tijuca", "Empena Digital Copacabana"
+  ],
+  matriz: MATRIZ_DADOS.map(function (r) {
+    var obj = {};
+    for (var i = 0; i < MATRIZ_CAMPOS.length; i++) obj[MATRIZ_CAMPOS[i]] = r[i];
+    return obj;
+  })
+};
+
+/* ==================================================================
+   MOTOR DE CÁLCULO
+   ================================================================== */
+
+function buscarLinhaMatriz(ativo, cota) {
+  return Regras_Alcadas.matriz.find(function (r) {
+    return r.ativo === ativo && String(r.cota) === String(cota);
+  });
+}
+
+function calcularOperacao(input) {
+  var ref = buscarLinhaMatriz(input.ativo, input.cota);
+  if (!ref) return { erro: "Combinação de Ativo e Cota não encontrada na base de premissas." };
+
+  var thresholds = {
+    precoTabela: ref.precoTabela, faixa1: ref.faixa1, faixa2: ref.faixa2,
+    faixa3: ref.faixa3, precoMinimo: ref.precoMinimo
+  };
+  var custosFixos = ref.custosFixos;
+  var meiaCotaAtiva = false;
+
+  if (input.tipoCota === "Meia-Cota") {
+    if (!ref.meiaPermitida || !ref.precoMeia) {
+      return { erro: "Meia-cota não está habilitada para este ativo/cota nas premissas comerciais." };
+    }
+    meiaCotaAtiva = true;
+    var fator = ref.precoMeia / ref.faixa1;
+    thresholds = {
+      precoTabela: ref.precoTabela * fator,
+      faixa1: ref.precoMeia,
+      faixa2: ref.faixa2 * fator,
+      faixa3: ref.faixa3 * fator,
+      precoMinimo: ref.precoMinimo * fator
+    };
+    custosFixos = custosFixos / 2;
+  }
+
+  var P = input.valorPI;
+  var g = Premissas_Gerais;
+
+  var pisValor = P * g.tributosReceita.pis;
+  var cofinsValor = P * g.tributosReceita.cofins;
+  var issValor = P * g.tributosReceita.iss;
+  var impostos = pisValor + cofinsValor + issValor;
+
+  var bvValor = P * g.comercial.bv;
+  var comissaoValor = P * g.comercial.comissaoExecutivo;
+  var inadimplenciaValor = P * g.comercial.inadimplencia;
+  var comercial = bvValor + comissaoValor + inadimplenciaValor;
+
+  var resultadoOperacional = P - impostos - custosFixos - comercial;
+
+  var irpj = 0, csll = 0, adicionalIrpj = 0;
+  if (resultadoOperacional > 0) {
+    irpj = resultadoOperacional * g.tributosLucro.irpj;
+    csll = resultadoOperacional * g.tributosLucro.csll;
+    if (resultadoOperacional > g.tributosLucro.limiteIsencaoAdicionalMensal) {
+      adicionalIrpj = (resultadoOperacional - g.tributosLucro.limiteIsencaoAdicionalMensal) * g.tributosLucro.adicionalIrpj;
+    }
+  }
+  var lucroLiquido = resultadoOperacional - irpj - adicionalIrpj - csll;
+  var margemLiquida = P !== 0 ? lucroLiquido / P : 0;
+
+  var faixaNum, nivelNecessario;
+  if (P >= thresholds.faixa1) { faixaNum = 1; nivelNecessario = "Executivo"; }
+  else if (P >= thresholds.faixa2) { faixaNum = 2; nivelNecessario = "Gerente"; }
+  else if (P >= thresholds.faixa3) { faixaNum = 3; nivelNecessario = "Diretor"; }
+  else { faixaNum = 0; nivelNecessario = null; }
+
+  var abaixoBreakEven = P < thresholds.precoMinimo;
+  var autorizado, motivo;
+  if (faixaNum === 0) {
+    autorizado = false;
+    motivo = abaixoBreakEven
+      ? "O valor proposto está abaixo do Break-Even deste ativo/cota — a operação resultaria em prejuízo. NÃO PERMITIDO em nenhuma alçada."
+      : "O valor proposto está abaixo da Faixa 3 (15% de lucro líquido alvo). NÃO PERMITIDO nesta ferramenta — requer exceção formal da Diretoria fora deste fluxo.";
+  } else {
+    autorizado = Regras_Alcadas.hierarquia[input.perfil] >= Regras_Alcadas.hierarquia[nivelNecessario];
+    motivo = autorizado
+      ? "O perfil informado (" + rotuloPerfil(input.perfil) + ") tem alçada suficiente para aprovar esta negociação."
+      : "Esta negociação exige aprovação de " + rotuloPerfil(nivelNecessario) + " (ou nível superior). O perfil informado não tem alçada para este desconto.";
+  }
+
+  var desconto = thresholds.precoTabela - P;
+  var percDesconto = thresholds.precoTabela ? desconto / thresholds.precoTabela : 0;
+
+  return {
+    erro: null, ref: ref, thresholds: thresholds, custosFixos: custosFixos, meiaCotaAtiva: meiaCotaAtiva,
+    valorPI: P, pisValor: pisValor, cofinsValor: cofinsValor, issValor: issValor, impostos: impostos,
+    bvValor: bvValor, comissaoValor: comissaoValor, inadimplenciaValor: inadimplenciaValor, comercial: comercial,
+    resultadoOperacional: resultadoOperacional, irpj: irpj, adicionalIrpj: adicionalIrpj, csll: csll,
+    lucroLiquido: lucroLiquido, margemLiquida: margemLiquida,
+    faixaNum: faixaNum, nivelNecessario: nivelNecessario, autorizado: autorizado, motivo: motivo,
+    desconto: desconto, percDesconto: percDesconto, abaixoBreakEven: abaixoBreakEven
+  };
+}
+
+function rotuloPerfil(p) {
+  return p === "Executivo" ? "Executivo Comercial"
+    : p === "Gerente" ? "Gerente Comercial"
+    : p === "Diretor" ? "Diretoria Financeira / CEO" : (p || "—");
+}
+
+/* ==================================================================
+   FORMATAÇÃO
+   ================================================================== */
+var fmtBRL = new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL", maximumFractionDigits: 2 });
+function money(v) { return fmtBRL.format(v || 0); }
+function moneyShort(v) {
+  var abs = Math.abs(v || 0);
+  var sign = v < 0 ? "-" : "";
+  if (abs >= 1000000) return sign + "R$ " + (abs / 1000000).toFixed(1).replace(".", ",") + "M";
+  if (abs >= 1000) return sign + "R$ " + (abs / 1000).toFixed(0) + "k";
+  return sign + "R$ " + abs.toFixed(0);
+}
+function pct(v) { return (v * 100).toFixed(1).replace(".", ",") + "%"; }
+function esc(s) {
+  return String(s).replace(/[&<>"']/g, function (c) {
+    return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c];
+  });
+}
+
+/* ==================================================================
+   UI — SELETORES E ESTADO
+   ================================================================== */
+var elAtivo = document.getElementById("f-ativo");
+var elCota = document.getElementById("f-cota");
+var elTipoCota = document.getElementById("f-tipocota");
+var elPerfil = document.getElementById("f-perfil");
+var elNumeroPI = document.getElementById("f-numeropi");
+var elValor = document.getElementById("f-valor");
+var elErrValor = document.getElementById("err-valor");
+var elHintTipoCota = document.getElementById("hint-tipocota");
+var elEmptyState = document.getElementById("emptyState");
+var elResultsWrap = document.getElementById("resultsWrap");
+
+function cotaRotulo(cota) {
+  var s = String(cota);
+  return /^\d+$/.test(s) ? "Cota " + s : s;
+}
+
+function popularAtivos() {
+  var opts = ['<option value="">Selecione o ativo…</option>'];
+  Regras_Alcadas.ativosOrdenados.forEach(function (a) {
+    opts.push('<option value="' + esc(a) + '">' + esc(a) + "</option>");
+  });
+  elAtivo.innerHTML = opts.join("");
+}
+
+function popularCotas(ativo) {
+  var linhas = Regras_Alcadas.matriz.filter(function (r) { return r.ativo === ativo; });
+  if (!linhas.length) {
+    elCota.innerHTML = '<option value="">Selecione o ativo primeiro</option>';
+    elCota.disabled = true;
+  } else {
+    elCota.innerHTML = linhas.map(function (r) {
+      return '<option value="' + esc(String(r.cota)) + '">' + esc(cotaRotulo(r.cota)) + "</option>";
+    }).join("");
+    elCota.disabled = false;
+  }
+  atualizarTipoCota();
+}
+
+function referenciaAtual() {
+  if (!elAtivo.value || !elCota.value) return null;
+  return buscarLinhaMatriz(elAtivo.value, elCota.value);
+}
+
+function atualizarTipoCota() {
+  var ref = referenciaAtual();
+  var optMeia = elTipoCota.querySelector('option[value="Meia-Cota"]');
+  if (ref && ref.meiaPermitida) {
+    optMeia.disabled = false;
+    elHintTipoCota.textContent = "Meia-cota disponível para este ativo/cota";
+  } else {
+    optMeia.disabled = true;
+    if (elTipoCota.value === "Meia-Cota") elTipoCota.value = "Cota Integral";
+    elHintTipoCota.textContent = "Meia-cota não disponível para este ativo/cota";
+  }
+}
+
+/* ==================================================================
+   RENDERIZAÇÃO DOS RESULTADOS
+   ================================================================== */
+var chartTermometro = null;
+var chartComposicao = null;
+
+function tentarCalcular() {
+  var ativo = elAtivo.value, cota = elCota.value, tipoCota = elTipoCota.value, perfil = elPerfil.value;
+  var valorRaw = elValor.value;
+  var valorPI = parseFloat(valorRaw);
+
+  elErrValor.textContent = "";
+  if (!ativo || !cota) { mostrarVazio(); return; }
+  if (!valorRaw || isNaN(valorPI) || valorPI <= 0) {
+    if (valorRaw) elErrValor.textContent = "Informe um valor de PI válido, maior que zero.";
+    mostrarVazio();
+    return;
+  }
+
+  var resultado = calcularOperacao({ ativo: ativo, cota: cota, tipoCota: tipoCota, perfil: perfil, valorPI: valorPI });
+  if (resultado.erro) {
+    elErrValor.textContent = resultado.erro;
+    mostrarVazio();
+    return;
+  }
+  renderizarResultado(resultado, { ativo: ativo, cota: cota, tipoCota: tipoCota, perfil: perfil, numeroPI: elNumeroPI.value });
+}
+
+function mostrarVazio() {
+  elEmptyState.style.display = "flex";
+  elResultsWrap.classList.remove("visible");
+}
+
+function renderizarResultado(r, ctx) {
+  elEmptyState.style.display = "none";
+  elResultsWrap.classList.add("visible");
+
+  /* ---- Status card ---- */
+  var card = document.getElementById("statusCard");
+  var icon = document.getElementById("statusIcon");
+  var title = document.getElementById("statusTitle");
+  var msg = document.getElementById("statusMsg");
+  card.classList.remove("status-ok", "status-fail", "status-empty");
+  var okSvg = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M8 12l3 3 5-6"/></svg>';
+  var failSvg = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M15 9l-6 6M9 9l6 6"/></svg>';
+
+  if (r.autorizado) {
+    card.classList.add("status-ok");
+    icon.innerHTML = okSvg;
+    title.textContent = "AUTORIZADO";
+  } else {
+    card.classList.add("status-fail");
+    icon.innerHTML = failSvg;
+    title.textContent = r.faixaNum === 0 ? "NÃO PERMITIDO" : "RECUSADO — ALÇADA INSUFICIENTE";
+  }
+  msg.textContent = r.motivo;
+
+  document.getElementById("metaNumeroPI").textContent = ctx.numeroPI ? ctx.numeroPI : "—";
+  document.getElementById("metaPerfil").textContent = rotuloPerfil(ctx.perfil);
+  document.getElementById("metaAtivoCota").textContent = ctx.ativo + " · " + cotaRotulo(ctx.cota) + (ctx.tipoCota === "Meia-Cota" ? " (meia-cota)" : "");
+  document.getElementById("metaFaixa").textContent = Regras_Alcadas.faixaMeta[r.faixaNum].rotulo;
+  document.getElementById("metaData").textContent = new Date().toLocaleString("pt-BR");
+
+  /* ---- KPIs ---- */
+  document.getElementById("kpiValorPI").textContent = money(r.valorPI);
+  document.getElementById("kpiValorPISub").innerHTML = ctx.tipoCota === "Meia-Cota" ? "Meia-cota" : "Cota integral";
+
+  document.getElementById("kpiPrecoTabela").textContent = money(r.thresholds.precoTabela);
+  document.getElementById("kpiDesconto").innerHTML = "Desconto: <b style='color:" + (r.desconto >= 0 ? "var(--saida-solid)" : "var(--entrada-solid)") + "'>" + pct(r.percDesconto) + "</b>";
+
+  document.getElementById("kpiFaixa").textContent = r.faixaNum === 0 ? "Fora de faixa" : ("Faixa " + r.faixaNum);
+  document.getElementById("kpiFaixaSub").textContent = r.faixaNum === 0 ? "Abaixo de 15% de lucro" : "Requer: " + rotuloPerfil(r.nivelNecessario);
+
+  document.getElementById("kpiMargem").textContent = pct(r.margemLiquida);
+  document.getElementById("kpiMargemSub").textContent = r.margemLiquida >= 0 ? "Margem líquida positiva" : "Margem líquida negativa";
+
+  document.getElementById("kpiLucro").textContent = money(r.lucroLiquido);
+  var grupoLabel = { "A - Gerador de Caixa": "Grupo A", "B - Giro": "Grupo B", "C - Tático": "Grupo C" }[r.ref.grupo] || r.ref.grupo;
+  document.getElementById("kpiGrupo").textContent = grupoLabel;
+
+  /* ---- DRE table ---- */
+  var dre = document.getElementById("dreBody");
+  var linhas = [];
+  linhas.push(rowDre("Receita Bruta (Valor do PI)", r.valorPI, false));
+  linhas.push(rowDreSub("(–) PIS (1,65%)", r.pisValor));
+  linhas.push(rowDreSub("(–) COFINS (7,6%)", r.cofinsValor));
+  linhas.push(rowDreSub("(–) ISS (5%)", r.issValor));
+  linhas.push(rowDreSub("(–) Custos Fixos Diretos e Estruturais", r.custosFixos));
+  linhas.push(rowDreSub("(–) BV — Bonificação de Veiculação (20%)", r.bvValor));
+  linhas.push(rowDreSub("(–) Comissão do Executivo (2%)", r.comissaoValor));
+  linhas.push(rowDreSub("(–) Inadimplência (2%)", r.inadimplenciaValor));
+  linhas.push(rowDreSubtotal("(=) Resultado Operacional", r.resultadoOperacional));
+  linhas.push(rowDreSub("(–) IRPJ (15% s/ Result. Operacional)", r.irpj));
+  linhas.push(rowDreSub("(–) Adicional de IRPJ (10% s/ excedente R$ 20.000)", r.adicionalIrpj));
+  linhas.push(rowDreSub("(–) CSLL (9% s/ Result. Operacional)", r.csll));
+  linhas.push(rowDreTotal("(=) LUCRO LÍQUIDO", r.lucroLiquido));
+  dre.innerHTML = linhas.join("");
+
+  /* ---- Custos itemizados (bônus fidelidade — ativo piloto Jd Oceânico) ---- */
+  var box = document.getElementById("custosItemizadosBox");
+  if (ctx.ativo === "Painel Jd Oceânico") {
+    var fator = ctx.tipoCota === "Meia-Cota" ? 0.5 : 1;
+    document.getElementById("custosItemizadosTitulo").textContent = "Detalhamento de Custos Fixos — " + Premissas_Jd_Oceanico.ativo + (fator === 0.5 ? " (meia-cota)" : "");
+    var itens = Premissas_Jd_Oceanico.custosFixosPorCota;
+    var lis = Object.keys(itens).map(function (k) {
+      return "<li><span>" + esc(k) + "</span><b>" + money(itens[k] * fator) + "</b></li>";
+    });
+    document.getElementById("custosItemizadosLista").innerHTML = lis.join("");
+    box.style.display = "block";
+  } else {
+    box.style.display = "none";
+  }
+
+  /* ---- Estratégia ---- */
+  var badge = document.getElementById("badgeGrupo");
+  badge.className = "badge " + (r.ref.grupo.indexOf("A -") === 0 ? "badge-grupo-a" : r.ref.grupo.indexOf("B -") === 0 ? "badge-grupo-b" : "badge-grupo-c");
+  badge.textContent = r.ref.grupo;
+  document.getElementById("estrategiaTexto").textContent = r.ref.estrategia;
+
+  var faixasBody = document.getElementById("faixasBody");
+  faixasBody.innerHTML = [
+    rowDre("Preço de Tabela", r.thresholds.precoTabela, false),
+    rowDre("Faixa 1 · Executivo (35% lucro)", r.thresholds.faixa1, false),
+    rowDre("Faixa 2 · Gerente (25% lucro)", r.thresholds.faixa2, false),
+    rowDre("Faixa 3 · Diretoria (15% lucro)", r.thresholds.faixa3, false),
+    rowDre("Preço Mínimo (Break-Even)", r.thresholds.precoMinimo, false)
+  ].join("");
+
+  desenharGraficos(r, ctx);
+}
+
+function rowDre(label, valor) {
+  return "<tr><td>" + esc(label) + "</td><td>" + money(valor) + "</td></tr>";
+}
+function rowDreSub(label, valor) {
+  return '<tr class="dre-sub"><td>' + esc(label) + "</td><td>" + money(-Math.abs(valor)) + "</td></tr>";
+}
+function rowDreSubtotal(label, valor) {
+  return '<tr class="dre-subtotal"><td>' + esc(label) + "</td><td>" + money(valor) + "</td></tr>";
+}
+function rowDreTotal(label, valor) {
+  var cls = valor >= 0 ? "positivo" : "negativo";
+  return '<tr class="dre-total ' + cls + '"><td>' + esc(label) + "</td><td>" + money(valor) + "</td></tr>";
+}
+
+/* ==================================================================
+   GRÁFICOS (Chart.js)
+   ================================================================== */
+function corTema(varName) {
+  return getComputedStyle(document.documentElement).getPropertyValue(varName).trim();
+}
+
+function desenharGraficos(r) {
+  if (typeof Chart === "undefined") {
+    ["chartTermometro", "chartDRE"].forEach(function (id) {
+      var canvas = document.getElementById(id);
+      var box = canvas.closest(".chart-box");
+      if (box && !box.querySelector(".empty-note")) {
+        var note = document.createElement("div");
+        note.className = "empty-note";
+        note.textContent = "Não foi possível carregar a biblioteca de gráficos (sem conexão com a internet). Os valores numéricos acima permanecem corretos.";
+        box.appendChild(note);
+        canvas.style.display = "none";
+      }
+    });
+    return;
+  }
+  var ctx1 = document.getElementById("chartTermometro").getContext("2d");
+  var labels = ["Seu Valor Proposto", "Preço de Tabela", "Faixa 1 · Executivo (35%)", "Faixa 2 · Gerente (25%)", "Faixa 3 · Diretoria (15%)", "Preço Mínimo (Break-Even)"];
+  var dados = [r.valorPI, r.thresholds.precoTabela, r.thresholds.faixa1, r.thresholds.faixa2, r.thresholds.faixa3, r.thresholds.precoMinimo];
+  var destaque = r.autorizado ? "#0ca30c" : (r.faixaNum === 0 ? "#d03b3b" : "#fab219");
+  var cores = [destaque, "#9a9a9d", "#077f81", "#09a5a8", "#eda100", "#dc224a"];
+
+  if (chartTermometro) chartTermometro.destroy();
+  chartTermometro = new Chart(ctx1, {
+    type: "bar",
+    data: { labels: labels, datasets: [{ data: dados, backgroundColor: cores, borderRadius: 4, barThickness: 22 }] },
+    options: {
+      indexAxis: "y",
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: { callbacks: { label: function (c) { return money(c.parsed.x); } } }
+      },
+      scales: {
+        x: { ticks: { callback: function (v) { return moneyShort(v); }, color: corTema("--text-secondary") }, grid: { color: corTema("--gridline") } },
+        y: { ticks: { color: corTema("--text-secondary"), font: { size: 11 } }, grid: { display: false } }
+      }
+    }
+  });
+
+  var ctx2 = document.getElementById("chartDRE").getContext("2d");
+  if (chartComposicao) chartComposicao.destroy();
+  chartComposicao = new Chart(ctx2, {
+    type: "bar",
+    data: {
+      labels: ["Valor do PI"],
+      datasets: [
+        { label: "Impostos (PIS+COFINS+ISS)", data: [r.impostos], backgroundColor: "#e34948" },
+        { label: "Custos Fixos", data: [r.custosFixos], backgroundColor: "#eda100" },
+        { label: "Custos Comerciais (BV+Com.+Inad.)", data: [r.comercial], backgroundColor: "#eb6834" },
+        { label: "IRPJ + Adicional + CSLL", data: [r.irpj + r.adicionalIrpj + r.csll], backgroundColor: "#4a3aa7" },
+        { label: "Lucro Líquido", data: [r.lucroLiquido], backgroundColor: "#1baf7a" }
+      ]
+    },
+    options: {
+      indexAxis: "y",
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { position: "bottom", labels: { color: corTema("--text-secondary"), font: { size: 11 }, boxWidth: 10 } },
+        tooltip: { callbacks: { label: function (c) { return c.dataset.label + ": " + money(c.parsed.x); } } }
+      },
+      scales: {
+        x: { stacked: true, ticks: { callback: function (v) { return moneyShort(v); }, color: corTema("--text-secondary") }, grid: { color: corTema("--gridline") } },
+        y: { stacked: true, ticks: { color: corTema("--text-secondary") }, grid: { display: false } }
+      }
+    }
+  });
+}
+
+/* ==================================================================
+   EVENTOS
+   ================================================================== */
+elAtivo.addEventListener("change", function () { popularCotas(elAtivo.value); tentarCalcular(); });
+elCota.addEventListener("change", function () { atualizarTipoCota(); tentarCalcular(); });
+elTipoCota.addEventListener("change", tentarCalcular);
+elPerfil.addEventListener("change", tentarCalcular);
+elNumeroPI.addEventListener("input", function () { if (elResultsWrap.classList.contains("visible")) tentarCalcular(); });
+elValor.addEventListener("input", tentarCalcular);
+document.getElementById("btnCalcular").addEventListener("click", function () {
+  tentarCalcular();
+  document.getElementById("resultsWrap").scrollIntoView({ behavior: "smooth", block: "start" });
+});
+document.getElementById("btnPrint").addEventListener("click", function () { window.print(); });
+
+var temaEscuro = window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches;
+document.getElementById("btnTheme").addEventListener("click", function () {
+  var root = document.documentElement;
+  var atual = root.getAttribute("data-theme");
+  var novo = atual === "dark" ? "light" : "dark";
+  root.setAttribute("data-theme", novo);
+  if (elResultsWrap.classList.contains("visible")) tentarCalcular();
+});
+
+/* ---------- inicialização ---------- */
+popularAtivos();
+mostrarVazio();
+
+</script>
+</body>
+</html>
