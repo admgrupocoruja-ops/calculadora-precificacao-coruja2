@@ -12,6 +12,8 @@ o resultado final do cálculo (KPIs, status de autorização e gráficos).
 """
 
 import base64
+import hashlib
+import hmac
 from datetime import datetime
 from pathlib import Path
 
@@ -414,39 +416,96 @@ st.markdown(_header_html, unsafe_allow_html=True)
 
 # ============================================================================
 # 4a) IDENTIFICAÇÃO DO SOLICITANTE (obrigatória antes de qualquer cálculo)
-#     O cargo informado aqui TRAVA o perfil usado na avaliação de alçada —
-#     o solicitante não escolhe livremente o próprio nível de aprovação.
+#     O cargo NÃO é mais autodeclarado. Cada pessoa tem usuário e senha
+#     próprios, cadastrados em Secrets (nunca no código-fonte nem no
+#     GitHub) — o cargo vem desse cadastro, travado ao login, e não é
+#     digitado nem escolhido livremente na tela. As senhas são guardadas
+#     com hash (PBKDF2-HMAC-SHA256 com salt por usuário), nunca em texto
+#     puro — mesmo quem tem acesso aos Secrets não vê a senha real.
 # ============================================================================
+def _usuarios_configurados() -> bool:
+    """True se existe pelo menos um usuário cadastrado em Secrets."""
+    try:
+        return "usuarios" in st.secrets and len(st.secrets["usuarios"]) > 0
+    except Exception:
+        return False
+
+
+def _verificar_senha(senha: str, senha_hash: str) -> bool:
+    """Confere a senha digitada contra o hash "salt_hex:hash_hex" salvo em
+    Secrets, usando comparação em tempo constante (evita timing attacks)."""
+    try:
+        salt_hex, hash_hex = str(senha_hash).split(":", 1)
+        salt = bytes.fromhex(salt_hex)
+        esperado = bytes.fromhex(hash_hex)
+    except (ValueError, AttributeError):
+        return False
+    calculado = hashlib.pbkdf2_hmac("sha256", senha.encode("utf-8"), salt, 200_000)
+    return hmac.compare_digest(calculado, esperado)
+
+
+def autenticar(email: str, senha: str, usuarios) -> dict | None:
+    """Confere e-mail + senha contra o cadastro em Secrets e retorna nome e
+    cargo do solicitante — ou None se a credencial for inválida, o usuário
+    não existir, ou o cargo cadastrado não for um dos perfis válidos
+    (protege contra erro de digitação em Secrets liberar acesso indevido).
+    Recebe `usuarios` como objeto dict-like para poder ser testado com um
+    dict comum, sem depender de st.secrets diretamente.
+    """
+    email_norm = str(email).strip().lower()
+    if not email_norm or not senha:
+        return None
+    usuarios_norm = {str(k).strip().lower(): v for k, v in dict(usuarios).items()}
+    registro = usuarios_norm.get(email_norm)
+    if not registro:
+        return None
+    cargo = registro.get("cargo")
+    senha_hash = registro.get("senha_hash")
+    if not cargo or cargo not in PERFIS or not senha_hash:
+        return None
+    if not _verificar_senha(senha, senha_hash):
+        return None
+    nome = registro.get("nome") or email_norm
+    return {"nome": nome, "cargo": cargo, "email": email_norm}
+
+
+if not _usuarios_configurados():
+    st.error(
+        "Nenhum usuário cadastrado ainda nesta implantação. Configure a seção "
+        "**[usuarios]** em Settings → Secrets do Streamlit Community Cloud "
+        "antes de usar a calculadora."
+    )
+    st.stop()
+
 if "identificacao" not in st.session_state:
     st.write("")
     col_esq, col_meio, col_dir = st.columns([1, 1.3, 1])
     with col_meio:
         with st.container(border=True):
-            st.subheader("Identifique-se para continuar")
-            st.caption("Seu cargo define automaticamente a alçada de aprovação disponível nesta simulação.")
-            with st.form("form_identificacao"):
-                nome_input = st.text_input("Nome completo")
-                cargo_input = st.selectbox("Cargo", PERFIS, index=None, placeholder="Selecione seu cargo")
-                entrar = st.form_submit_button("Continuar", width="stretch", type="primary")
+            st.subheader("Entrar para continuar")
+            st.caption("Seu cargo é definido pelo cadastro interno — não é mais escolhido na tela.")
+            with st.form("form_login"):
+                email_input = st.text_input("E-mail corporativo")
+                senha_input = st.text_input("Senha", type="password")
+                entrar = st.form_submit_button("Entrar", width="stretch", type="primary")
 
             if entrar:
-                if not nome_input.strip():
-                    st.error("Informe seu nome para continuar.")
-                elif not cargo_input:
-                    st.error("Selecione seu cargo para continuar.")
+                identidade = autenticar(email_input, senha_input, st.secrets.get("usuarios", {}))
+                if identidade is None:
+                    st.error("E-mail ou senha inválidos.")
                 else:
-                    st.session_state["identificacao"] = {"nome": nome_input.strip(), "cargo": cargo_input}
+                    st.session_state["identificacao"] = identidade
                     st.rerun()
     st.stop()
 
 identificacao = st.session_state["identificacao"]
-perfil = identificacao["cargo"]  # travado pela identificação — não é mais escolhido na calculadora
+perfil = identificacao["cargo"]  # determinado pelo cadastro — não é mais escolhido na calculadora
 
 # ---------------------------- Sidebar --------------------------------------
 with st.sidebar:
     st.header("Solicitante")
     st.info(f"**{identificacao['nome']}**  \nCargo: {perfil}")
-    if st.button("Trocar usuário", width="stretch"):
+    if st.button("Sair", width="stretch"):
         st.session_state.pop("identificacao", None)
         st.session_state.pop("ultimo_calculo", None)
         st.rerun()

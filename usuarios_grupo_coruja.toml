@@ -1,0 +1,109 @@
+# ============================================================================
+# BLOCO [usuarios] PRONTO — Calculadora de Precificação, Grupo Coruja
+# ============================================================================
+# Isto NÃO é um arquivo de código do projeto — é só o texto para você colar
+# dentro de Secrets (share.streamlit.io -> seu app -> Settings -> Secrets),
+# junto com o resto do conteúdo que já está lá (ou substituindo, se você
+# ainda não colou nada).
+#
+# Nome, e-mail e cargo de cada pessoa já estão preenchidos com a lista que
+# você me passou. FALTA SÓ o "senha_hash" de cada um — troque cada
+# "PENDENTE" pelo hash que o script gerar_hash_senha.py devolver para
+# aquela pessoa (rode o script uma vez por pessoa, com uma senha provisória
+# para cada uma). Enquanto o hash estiver "PENDENTE", essa pessoa
+# simplesmente não vai conseguir logar (não trava o app para o resto).
+#
+# Duas observações sobre os dados abaixo:
+#   - "bruno@grupocoruja.com": você mandou "bruno@grupocoruja" sem o ".com"
+#     — assumi que foi só a digitação, complete/corrija se não for esse o
+#     domínio.
+#   - Rebeca e Rudimila usaram e-mail pessoal (@gmail.com) em vez de
+#     corporativo — funciona normalmente no login (o sistema não exige
+#     domínio @grupocoruja.com), só fica registrado aqui como um lembrete
+#     de que são contas fora do domínio da empresa.
+# ============================================================================
+
+[usuarios."glauco.araujo@grupocoruja.com"]
+nome = "Glauco Araújo"
+cargo = "Diretor Financeiro"
+senha_hash = "PENDENTE"
+
+[usuarios."andrea.ferretti@grupocoruja.com"]
+nome = "Andrea Cristina Ferretti Taboquini"
+cargo = "Gerente Comercial"
+senha_hash = "PENDENTE"
+
+[usuarios."bruno.monteiro@grupocoruja.com"]
+nome = "Bruno Monteiro da Silva"
+cargo = "Executivo"
+senha_hash = "PENDENTE"
+
+[usuarios."bruno@grupocoruja.com"]
+nome = "Bruno Soares de Faria"
+cargo = "Executivo"
+senha_hash = "PENDENTE"
+
+[usuarios."carolina.esteves@grupocoruja.com"]
+nome = "Carolina Esteves Lima"
+cargo = "Executivo"
+senha_hash = "PENDENTE"
+
+[usuarios."paulo.oliveira@grupocoruja.com"]
+nome = "Paulo Rodrigo Cunha de Oliveira"
+cargo = "Executivo"
+senha_hash = "PENDENTE"
+
+[usuarios."silvia.ramalho@grupocoruja.com"]
+nome = "Silvia Nazareth Ramalho"
+cargo = "Executivo"
+senha_hash = "PENDENTE"
+
+[usuarios."tatiana.vahia@grupocoruja.com"]
+nome = "Tatiana Gutbrod Barros Vahia"
+cargo = "Executivo"
+senha_hash = "PENDENTE"
+
+[usuarios."wcosta@grupocoruja.com"]
+nome = "Wellington Costa da Silva"
+cargo = "Executivo"
+senha_hash = "PENDENTE"
+
+[usuarios."aloisio.gomes@grupocoruja.com"]
+nome = "Aloisio Gomes"
+cargo = "Executivo"
+senha_hash = "PENDENTE"
+
+[usuarios."william.oliveira@grupocoruja.com"]
+nome = "William Oliveira"
+cargo = "Executivo"
+senha_hash = "PENDENTE"
+
+[usuarios."jefferson.alves@grupocoruja.com"]
+nome = "Jefferson Alves"
+cargo = "Executivo"
+senha_hash = "PENDENTE"
+
+[usuarios."tamisa.ramos@grupocoruja.com"]
+nome = "Tamisa Lianny"
+cargo = "Diretor Comercial"
+senha_hash = "PENDENTE"
+
+[usuarios."jued.andari@grupocoruja.com"]
+nome = "Jued Andari"
+cargo = "Diretor Comercial"
+senha_hash = "PENDENTE"
+
+[usuarios."leandro.lemos@grupocoruja.com"]
+nome = "Leandro Lemos"
+cargo = "Diretor Financeiro"
+senha_hash = "PENDENTE"
+
+[usuarios."rebecaborges@gmail.com"]
+nome = "Rebeca Borges Maia"
+cargo = "Diretor Comercial"
+senha_hash = "PENDENTE"
+
+[usuarios."rudimila39@gmail.com"]
+nome = "Rudimila Borges Maia"
+cargo = "Diretor Comercial"
+senha_hash = "PENDENTE"
