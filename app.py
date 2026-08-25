@@ -236,8 +236,20 @@ PERFIS = ["Executivo", "Gerente Comercial", "Diretor Comercial", "Diretor Financ
 # 2) MOTOR DE CÁLCULO (DRE, classificação estratégica e alçada)
 # ============================================================================
 
-def calcular_dre(valor_venda: float, tipo: str, premissas_ativo: dict, regras: dict) -> dict:
-    """Reproduz a apuração de DRE por cota/posição de cada ativo da planilha mestre."""
+def calcular_dre(valor_venda: float, tipo: str, premissas_ativo: dict, regras: dict, tem_bv: bool = True) -> dict:
+    """Reproduz a apuração de DRE por cota/posição de cada ativo da planilha mestre.
+
+    tem_bv indica se o PI negociado inclui Bonificação de Veiculação (BV).
+    Na aba "Tabela de Preço" da planilha mestre, cada ativo/tipo tem duas
+    linhas — "Com BV" e "Sem BV" — com o mesmo Preço de Tabela, mas tetos de
+    desconto por alçada diferentes (sem BV é mais permissivo). Não existe
+    uma segunda fórmula de DRE "sem BV" nas abas de origem: BV é, na prática,
+    um custo (% do Valor de Venda) que só é incorrido quando a bonificação é
+    de fato concedida. Por isso, quando tem_bv=False, este custo é zerado —
+    o que aumenta o Resultado Operacional e a Margem Líquida, dando mais
+    espaço de desconto antes de exigir uma alçada maior, no mesmo sentido do
+    que a aba "Tabela de Preço" reflete com seus tetos mais permissivos.
+    """
     p = premissas_ativo[tipo]
     trib_receita = regras["tributos_receita"]
     trib_lucro = regras["tributos_lucro"]
@@ -254,7 +266,7 @@ def calcular_dre(valor_venda: float, tipo: str, premissas_ativo: dict, regras: d
     custos_fixos = p["custos_fixos_diretos"]
     total_custos_fixos = sum(custos_fixos.values())
 
-    bv = valor_venda * p["bv"]
+    bv = (valor_venda * p["bv"]) if tem_bv else 0.0
     comissao = valor_venda * p["comissao"]
     inadimplencia = valor_venda * p["inadimplencia"]
 
@@ -280,6 +292,7 @@ def calcular_dre(valor_venda: float, tipo: str, premissas_ativo: dict, regras: d
 
     return {
         "valor_venda": valor_venda,
+        "tem_bv": tem_bv,
         "pis": pis, "cofins": cofins, "iss": iss,
         "total_tributos_receita": total_tributos_receita,
         "custos_fixos_diretos": custos_fixos,
@@ -450,6 +463,15 @@ with st.sidebar:
     tipos_disponiveis = list(ATIVOS[ativo].keys())
     rotulo_tipo = "Tipo de Cota" if tipos_disponiveis in (["Cota Inteira", "Meia Cota"],) else "Tipo / Posição"
     tipo_cota = st.selectbox(rotulo_tipo, tipos_disponiveis, index=0, key=f"tipo_select_{ativo}")
+    tem_bv_label = st.radio(
+        "O PI negociado tem BV (Bonificação de Veiculação)?",
+        ["Sim", "Não"],
+        index=0,
+        horizontal=True,
+        help="Defina se a negociação inclui bonificação de veiculação. Isso muda o custo "
+             "considerado no cálculo e, consequentemente, a faixa de alçada exigida.",
+    )
+    tem_bv = tem_bv_label == "Sim"
     valor_pi = st.number_input(
         "Valor do PI Proposto (R$)",
         min_value=0.0,
@@ -476,6 +498,7 @@ if calcular:
         "perfil": perfil,
         "ativo": ativo,
         "tipo_cota": tipo_cota,
+        "tem_bv": tem_bv,
         "valor_pi": valor_pi,
         "timestamp": datetime.now(),
     }
@@ -483,16 +506,17 @@ if calcular:
 dados = st.session_state["ultimo_calculo"]
 premissas_ativo = ATIVOS[dados["ativo"]]
 
-dre = calcular_dre(dados["valor_pi"], dados["tipo_cota"], premissas_ativo, REGRAS_ALCADAS)
+dre = calcular_dre(dados["valor_pi"], dados["tipo_cota"], premissas_ativo, REGRAS_ALCADAS, tem_bv=dados["tem_bv"])
 alcada = determinar_alcada(dre, REGRAS_ALCADAS)
 autorizacao = avaliar_autorizacao(dados["perfil"], alcada, REGRAS_ALCADAS)
 
 # ---- Cabeçalho da negociação -----------------------------------------------
-col_a, col_b, col_c, col_d = st.columns(4)
+col_a, col_b, col_c, col_d, col_e = st.columns(5)
 col_a.markdown(f"**Nº do PI**  \n{dados['pi_numero'] or '—'}")
 col_b.markdown(f"**Ativo**  \n{dados['ativo']} ({dados['tipo_cota']})")
-col_c.markdown(f"**Solicitante**  \n{dados['nome']} ({dados['perfil']})")
-col_d.markdown(f"**Simulado em**  \n{dados['timestamp'].strftime('%d/%m/%Y %H:%M')}")
+col_c.markdown(f"**BV**  \n{'Com BV' if dados['tem_bv'] else 'Sem BV'}")
+col_d.markdown(f"**Solicitante**  \n{dados['nome']} ({dados['perfil']})")
+col_e.markdown(f"**Simulado em**  \n{dados['timestamp'].strftime('%d/%m/%Y %H:%M')}")
 
 st.divider()
 
