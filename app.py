@@ -11,12 +11,16 @@ As premissas de custo, tributos e alçadas ficam embutidas neste arquivo
 o resultado final do cálculo (KPIs, status de autorização e gráficos).
 """
 
+import base64
 from datetime import datetime
 from pathlib import Path
 
 import streamlit as st
 
 LOGO_PATH = Path(__file__).parent / "assets" / "logo_grupo_coruja.png"
+LOGO_DATA_URI = None
+if LOGO_PATH.exists():
+    LOGO_DATA_URI = "data:image/png;base64," + base64.b64encode(LOGO_PATH.read_bytes()).decode("ascii")
 
 # ============================================================================
 # 1) DADOS PROTEGIDOS — PREMISSAS CONFIDENCIAIS (não exibir na interface)
@@ -251,13 +255,28 @@ st.set_page_config(
 st.markdown(
     """
     <style>
-    .coruja-stripe{
-        height:4px; border-radius:4px;
-        background: linear-gradient(90deg, #dc224a, #077f81);
-        margin-bottom: 18px;
+    html, body, [class*="css"]  {
+        font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
     }
-    .coruja-subtitle{
-        color:#077f81; font-weight:600; font-size:0.95rem; margin-top:-8px;
+    .coruja-header{
+        display:flex; align-items:center; gap:18px;
+        padding:20px 26px; margin-bottom:22px; border-radius:16px;
+        background: linear-gradient(135deg, rgba(220,34,74,0.08), rgba(7,127,129,0.08));
+        border:1px solid rgba(11,11,11,0.08);
+        border-top: 4px solid transparent;
+        border-image: linear-gradient(90deg, #dc224a, #077f81) 1;
+    }
+    .coruja-header img{
+        height:52px; width:auto; flex:none;
+        background:#ffffff; padding:8px 12px; border-radius:10px;
+        box-shadow: 0 1px 3px rgba(11,11,11,0.12);
+    }
+    .coruja-header h1{
+        font-size:1.55rem; font-weight:800; letter-spacing:-0.01em;
+        margin:0; color:#0b0b0b;
+    }
+    .coruja-header p{
+        margin:4px 0 0; font-size:0.98rem; font-weight:600; color:#077f81;
     }
     </style>
     """,
@@ -267,12 +286,63 @@ st.markdown(
 if LOGO_PATH.exists():
     st.logo(str(LOGO_PATH), icon_image=str(LOGO_PATH))
 
+_logo_img_tag = f'<img src="{LOGO_DATA_URI}" alt="Grupo Coruja" />' if LOGO_DATA_URI else ""
+st.markdown(
+    f"""
+    <div class="coruja-header">
+        {_logo_img_tag}
+        <div>
+            <h1>Calculadora Comercial &amp; Liberação de Alçadas</h1>
+            <p>Grupo Coruja — verificação automática de alçada de aprovação</p>
+        </div>
+    </div>
+    """,
+    unsafe_allow_html=True,
+)
+
+# ============================================================================
+# 4a) IDENTIFICAÇÃO DO SOLICITANTE (obrigatória antes de qualquer cálculo)
+#     O cargo informado aqui TRAVA o perfil usado na avaliação de alçada —
+#     o solicitante não escolhe livremente o próprio nível de aprovação.
+# ============================================================================
+if "identificacao" not in st.session_state:
+    st.write("")
+    col_esq, col_meio, col_dir = st.columns([1, 1.3, 1])
+    with col_meio:
+        with st.container(border=True):
+            st.subheader("Identifique-se para continuar")
+            st.caption("Seu cargo define automaticamente a alçada de aprovação disponível nesta simulação.")
+            with st.form("form_identificacao"):
+                nome_input = st.text_input("Nome completo")
+                cargo_input = st.selectbox("Cargo", PERFIS, index=None, placeholder="Selecione seu cargo")
+                entrar = st.form_submit_button("Continuar", width="stretch", type="primary")
+
+            if entrar:
+                if not nome_input.strip():
+                    st.error("Informe seu nome para continuar.")
+                elif not cargo_input:
+                    st.error("Selecione seu cargo para continuar.")
+                else:
+                    st.session_state["identificacao"] = {"nome": nome_input.strip(), "cargo": cargo_input}
+                    st.rerun()
+    st.stop()
+
+identificacao = st.session_state["identificacao"]
+perfil = identificacao["cargo"]  # travado pela identificação — não é mais escolhido na calculadora
+
 # ---------------------------- Sidebar --------------------------------------
 with st.sidebar:
+    st.header("Solicitante")
+    st.info(f"**{identificacao['nome']}**  \nCargo: {perfil}")
+    if st.button("Trocar usuário", width="stretch"):
+        st.session_state.pop("identificacao", None)
+        st.session_state.pop("ultimo_calculo", None)
+        st.rerun()
+
+    st.divider()
     st.header("Dados da Negociação")
     with st.form("form_negociacao"):
         pi_numero = st.text_input("Nº do PI Negociado", placeholder="Ex.: PI-2026-0842")
-        perfil = st.selectbox("Perfil do Solicitante", PERFIS, index=0)
         ativo = st.selectbox("Ativo Negociado", list(ATIVOS.keys()), index=0)
         tipo_cota = st.selectbox("Tipo de Cota", TIPOS_COTA, index=0)
         valor_pi = st.number_input(
@@ -290,14 +360,6 @@ with st.sidebar:
         "resultado final da simulação."
     )
 
-# ---------------------------- Corpo principal -------------------------------
-st.markdown('<div class="coruja-stripe"></div>', unsafe_allow_html=True)
-st.title("Calculadora Comercial & Liberação de Alçadas")
-st.markdown(
-    '<p class="coruja-subtitle">Grupo Coruja — verificação automática de alçada de aprovação</p>',
-    unsafe_allow_html=True,
-)
-
 if not calcular and "ultimo_calculo" not in st.session_state:
     st.info("Preencha os dados da negociação na barra lateral e clique em **Calcular Autorização**.")
     st.stop()
@@ -305,6 +367,7 @@ if not calcular and "ultimo_calculo" not in st.session_state:
 if calcular:
     st.session_state["ultimo_calculo"] = {
         "pi_numero": pi_numero,
+        "nome": identificacao["nome"],
         "perfil": perfil,
         "ativo": ativo,
         "tipo_cota": tipo_cota,
@@ -323,7 +386,7 @@ autorizacao = avaliar_autorizacao(dados["perfil"], alcada, REGRAS_ALCADAS)
 col_a, col_b, col_c, col_d = st.columns(4)
 col_a.markdown(f"**Nº do PI**  \n{dados['pi_numero'] or '—'}")
 col_b.markdown(f"**Ativo**  \n{dados['ativo']} ({dados['tipo_cota']})")
-col_c.markdown(f"**Solicitante**  \n{dados['perfil']}")
+col_c.markdown(f"**Solicitante**  \n{dados['nome']} ({dados['perfil']})")
 col_d.markdown(f"**Simulado em**  \n{dados['timestamp'].strftime('%d/%m/%Y %H:%M')}")
 
 st.divider()
