@@ -2,16 +2,15 @@
 # BLOCO [usuarios] PRONTO — Calculadora de Precificação, Grupo Coruja
 # ============================================================================
 # Isto NÃO é um arquivo de código do projeto — é só o texto para você colar
-# dentro de Secrets (share.streamlit.io -> seu app -> Settings -> Secrets),
-# junto com o resto do conteúdo que já está lá (ou substituindo, se você
-# ainda não colou nada).
+# dentro de Secrets (share.streamlit.io -> seu app -> Settings -> Secrets).
 #
-# Nome, e-mail e cargo de cada pessoa já estão preenchidos com a lista que
-# você me passou. FALTA SÓ o "senha_hash" de cada um — troque cada
-# "PENDENTE" pelo hash que o script gerar_hash_senha.py devolver para
-# aquela pessoa (rode o script uma vez por pessoa, com uma senha provisória
-# para cada uma). Enquanto o hash estiver "PENDENTE", essa pessoa
-# simplesmente não vai conseguir logar (não trava o app para o resto).
+# As 17 pessoas já estão com nome, e-mail, cargo e senha_hash preenchidos —
+# nada de "PENDENTE" restando. É só copiar o conteúdo deste arquivo inteiro
+# e colar em Secrets, substituindo o que já estiver lá.
+#
+# Se, no futuro, precisar adicionar ou trocar a senha de mais alguém, rode
+# "python3 gerar_hash_senha.py" de novo e copie o novo hash para dentro do
+# bloco da pessoa aqui (ou adicione um bloco novo, no mesmo formato).
 #
 # Duas observações sobre os dados abaixo:
 #   - "bruno@grupocoruja.com": você mandou "bruno@grupocoruja" sem o ".com"
@@ -26,84 +25,84 @@
 [usuarios."glauco.araujo@grupocoruja.com"]
 nome = "Glauco Araújo"
 cargo = "Diretor Financeiro"
-senha_hash = "PENDENTE"
+senha_hash = "528722f1afad2535997d24ef440086d5:009363ac39a34c96fa8c3cf47b326a13ff5012509f5a39eb24958062ffb7eae3"
 
 [usuarios."andrea.ferretti@grupocoruja.com"]
 nome = "Andrea Cristina Ferretti Taboquini"
 cargo = "Gerente Comercial"
-senha_hash = "PENDENTE"
+senha_hash = "b2fd7307087e14b3270223f808f361af:476f050338c72909f31b641d6ff143af6f950983d4c971ef57783467ad9c94a9"
 
 [usuarios."bruno.monteiro@grupocoruja.com"]
 nome = "Bruno Monteiro da Silva"
 cargo = "Executivo"
-senha_hash = "PENDENTE"
+senha_hash = "535d91cfe52ccd5b8e82310934ed7d34:c0e2ae4e469d7911418c5d93f241ca8ad3307be7a1e19e7dbc9a96b719d0fe75"
 
 [usuarios."bruno@grupocoruja.com"]
 nome = "Bruno Soares de Faria"
 cargo = "Executivo"
-senha_hash = "PENDENTE"
+senha_hash = "3e08a08c89216a636897217a2b918c23:e505551e7a7608bacc4899e59ebd2738948c654dfd0b964b4f825672a1f08e9a"
 
 [usuarios."carolina.esteves@grupocoruja.com"]
 nome = "Carolina Esteves Lima"
 cargo = "Executivo"
-senha_hash = "PENDENTE"
+senha_hash = "e35a304da4e5d5494ef5c03c5acf9a53:b319e026ef8468fb46f20808af3f3ca314c67e48ac57aca25d21056ebcbd3c7f"
 
 [usuarios."paulo.oliveira@grupocoruja.com"]
 nome = "Paulo Rodrigo Cunha de Oliveira"
 cargo = "Executivo"
-senha_hash = "PENDENTE"
+senha_hash = "2cb941dd5ad27f050ef6b88ab8a19aa7:4bdb297bab480d1ae63ae9be231c60e8f2cca11ff10b90f71a558ec9a3e940ce"
 
 [usuarios."silvia.ramalho@grupocoruja.com"]
 nome = "Silvia Nazareth Ramalho"
 cargo = "Executivo"
-senha_hash = "PENDENTE"
+senha_hash = "99cc2c3f8f65e20f1c86c0134c7da4f9:360b293745f5579d3c844f149cbcbe78974a39314390e5d3c43069f2192be9d1"
 
 [usuarios."tatiana.vahia@grupocoruja.com"]
 nome = "Tatiana Gutbrod Barros Vahia"
 cargo = "Executivo"
-senha_hash = "PENDENTE"
+senha_hash = "ca3222fa22d29831144e6b9a2e5ee1eb:94bab6502675717bc40d5ebd9773fc67354f08bca07842348f4cdae27ed62af0"
 
 [usuarios."wcosta@grupocoruja.com"]
 nome = "Wellington Costa da Silva"
 cargo = "Executivo"
-senha_hash = "PENDENTE"
+senha_hash = "3b13ac8047c9e0c5b2483ae11c724bf4:9dcd9c25a041f6a9ca7c5f3229e309656f44326519e6a1a2de1fd75750fc5400"
 
 [usuarios."aloisio.gomes@grupocoruja.com"]
 nome = "Aloisio Gomes"
 cargo = "Executivo"
-senha_hash = "PENDENTE"
+senha_hash = "ac767b9daedb7437f4c3568d92ba48f5:c2fb886c33e346ba1799cb4e3dfeba333c60ed7ca2261f300d4e982ffb02f357"
 
 [usuarios."william.oliveira@grupocoruja.com"]
 nome = "William Oliveira"
 cargo = "Executivo"
-senha_hash = "PENDENTE"
+senha_hash = "ce05a51f29aa030bd335cbaa7ea2044a:8c3ac95318dfbe23dba92dcc1f9b43ecf7065ddb2b98cf3c37cfa80d02a96b79"
 
 [usuarios."jefferson.alves@grupocoruja.com"]
 nome = "Jefferson Alves"
 cargo = "Executivo"
-senha_hash = "PENDENTE"
+senha_hash = "5e87a8db386fdc2c203652cd40b60386:bf55d7a9c0e5198fa1ad6f454cc54ebab2b5756b0ebc8e9a55e7027199cb770e"
 
 [usuarios."tamisa.ramos@grupocoruja.com"]
 nome = "Tamisa Lianny"
 cargo = "Diretor Comercial"
-senha_hash = "PENDENTE"
+senha_hash = "38231a91a21333272b1e3200b3ca2c00:54e7009d6a71d73976326fdc3e9ca449ad5c900645f9a57293f2130853bd70a0"
 
 [usuarios."jued.andari@grupocoruja.com"]
 nome = "Jued Andari"
 cargo = "Diretor Comercial"
-senha_hash = "PENDENTE"
+senha_hash = "396567d8c1e650e37947727d6c25e33a:a07e4ee793d62b4105b433ea73d82b6bea0b030e6760a4d772fb1bd60ed53c7a"
 
 [usuarios."leandro.lemos@grupocoruja.com"]
 nome = "Leandro Lemos"
 cargo = "Diretor Financeiro"
-senha_hash = "PENDENTE"
+senha_hash = "f4f4a948a2de300abab84a485fe4f716:0751dcaaa037538d28201c856e2ecb68f9e25a9477b76154949092629d88b6d7"
 
 [usuarios."rebecaborges@gmail.com"]
 nome = "Rebeca Borges Maia"
 cargo = "Diretor Comercial"
-senha_hash = "PENDENTE"
+senha_hash = "91545047f1e0513ce2f62ba801642dea:20ec413f1520be8254abed416464a7de0de6d782785fcec7806375be8fce207f"
 
 [usuarios."rudimila39@gmail.com"]
 nome = "Rudimila Borges Maia"
 cargo = "Diretor Comercial"
-senha_hash = "PENDENTE"
+senha_hash = "c80306331a9ddf0a3596ee38a90ca10a:13903722156869c8c06da2225cf672e5124fc5403da326c36127e6e6cd85745c"
