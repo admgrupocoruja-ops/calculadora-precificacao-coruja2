@@ -252,53 +252,47 @@ st.set_page_config(
 )
 
 # ---- Identidade visual Grupo Coruja (crimson + teal, extraídas do logo) ----
-st.markdown(
-    """
-    <style>
-    html, body, [class*="css"]  {
-        font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
-    }
-    .coruja-header{
-        display:flex; align-items:center; gap:18px;
-        padding:20px 26px; margin-bottom:22px; border-radius:16px;
-        background: linear-gradient(135deg, rgba(220,34,74,0.08), rgba(7,127,129,0.08));
-        border:1px solid rgba(11,11,11,0.08);
-        border-top: 4px solid transparent;
-        border-image: linear-gradient(90deg, #dc224a, #077f81) 1;
-    }
-    .coruja-header img{
-        height:52px; width:auto; flex:none;
-        background:#ffffff; padding:8px 12px; border-radius:10px;
-        box-shadow: 0 1px 3px rgba(11,11,11,0.12);
-    }
-    .coruja-header h1{
-        font-size:1.55rem; font-weight:800; letter-spacing:-0.01em;
-        margin:0; color:#0b0b0b;
-    }
-    .coruja-header p{
-        margin:4px 0 0; font-size:0.98rem; font-weight:600; color:#077f81;
-    }
-    </style>
-    """,
-    unsafe_allow_html=True,
-)
+# NOTA: o HTML/CSS abaixo é escrito SEM indentação (textwrap.dedent) de propósito —
+# um bloco indentado com 4+ espaços é interpretado pelo parser Markdown como um
+# bloco de código e aparece como texto cru na tela, em vez de ser renderizado.
+_CSS = """
+<style>
+html, body, [class*="css"]  {
+    font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+.coruja-header{
+    display:flex; align-items:center; gap:18px;
+    padding:20px 26px; margin-bottom:22px; border-radius:16px;
+    background: linear-gradient(135deg, rgba(220,34,74,0.08), rgba(7,127,129,0.08));
+    border:1px solid rgba(11,11,11,0.08);
+    border-top: 4px solid transparent;
+    border-image: linear-gradient(90deg, #dc224a, #077f81) 1;
+}
+.coruja-header img{
+    height:52px; width:auto; flex:none;
+    background:#ffffff; padding:8px 12px; border-radius:10px;
+    box-shadow: 0 1px 3px rgba(11,11,11,0.12);
+}
+.coruja-header h1{
+    font-size:1.55rem; font-weight:800; letter-spacing:-0.01em;
+    margin:0; color:#0b0b0b;
+}
+.coruja-header p{
+    margin:4px 0 0; font-size:0.98rem; font-weight:600; color:#077f81;
+}
+</style>
+"""
+st.markdown(_CSS, unsafe_allow_html=True)
 
 if LOGO_PATH.exists():
     st.logo(str(LOGO_PATH), icon_image=str(LOGO_PATH))
 
 _logo_img_tag = f'<img src="{LOGO_DATA_URI}" alt="Grupo Coruja" />' if LOGO_DATA_URI else ""
-st.markdown(
-    f"""
-    <div class="coruja-header">
-        {_logo_img_tag}
-        <div>
-            <h1>Calculadora Comercial &amp; Liberação de Alçadas</h1>
-            <p>Grupo Coruja — verificação automática de alçada de aprovação</p>
-        </div>
-    </div>
-    """,
-    unsafe_allow_html=True,
-)
+_header_html = f"""<div class="coruja-header">{_logo_img_tag}<div>
+<h1>Calculadora Comercial &amp; Liberação de Alçadas</h1>
+<p>Grupo Coruja — verificação automática de alçada de aprovação</p>
+</div></div>"""
+st.markdown(_header_html, unsafe_allow_html=True)
 
 # ============================================================================
 # 4a) IDENTIFICAÇÃO DO SOLICITANTE (obrigatória antes de qualquer cálculo)
@@ -405,23 +399,22 @@ if alcada["faixa"] == 4:
     else:
         motivo = "Esta negociação está abaixo do piso mínimo de rentabilidade aceitável e não pode ser aprovada em nenhuma alçada."
 elif autorizacao["autorizado"]:
-    motivo = f"Esta negociação está dentro da alçada de aprovação do perfil **{dados['perfil']}**."
+    motivo = f"Esta negociação está dentro da alçada de aprovação do perfil <strong>{dados['perfil']}</strong>."
 else:
     motivo = (
         f"Esta negociação exige aprovação de um perfil com alçada superior — no mínimo "
-        f"**{alcada['cargo_minimo']}**. O perfil selecionado (**{dados['perfil']}**) não possui alçada suficiente."
+        f"<strong>{alcada['cargo_minimo']}</strong>. O perfil selecionado (<strong>{dados['perfil']}</strong>) "
+        f"não possui alçada suficiente."
     )
 
-st.markdown(
-    f"""
-    <div style="background-color:{bg}; color:{fg}; padding:24px 28px; border-radius:12px;
-                border:1px solid {fg}33; margin-bottom:8px;">
-        <div style="font-size:1.6rem; font-weight:700; letter-spacing:0.03em;">{status_txt}</div>
-        <div style="font-size:1rem; margin-top:8px;">{motivo}</div>
-    </div>
-    """,
-    unsafe_allow_html=True,
+_status_html = (
+    f'<div style="background-color:{bg}; color:{fg}; padding:24px 28px; border-radius:12px; '
+    f'border:1px solid {fg}33; margin-bottom:8px;">'
+    f'<div style="font-size:1.6rem; font-weight:700; letter-spacing:0.03em;">{status_txt}</div>'
+    f'<div style="font-size:1rem; margin-top:8px;">{motivo}</div>'
+    f"</div>"
 )
+st.markdown(_status_html, unsafe_allow_html=True)
 
 st.markdown("")
 st.caption(

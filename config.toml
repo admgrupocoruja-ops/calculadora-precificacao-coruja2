@@ -2,6 +2,7 @@
 # Identidade visual Grupo Coruja — crimson e teal extraídos do logo oficial,
 # mesma paleta e tipografia (system-ui) usadas nos demais dashboards internos
 # da empresa (fluxo de caixa, projeção diária, centro de custo).
+base = "light"
 primaryColor = "#dc224a"
 backgroundColor = "#f9f9f7"
 secondaryBackgroundColor = "#eaf5f5"
