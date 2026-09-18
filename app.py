@@ -14,6 +14,7 @@ o resultado final do cálculo (KPIs, status de autorização e gráficos).
 import base64
 import hashlib
 import hmac
+import json
 from datetime import datetime
 from pathlib import Path
 
@@ -342,6 +343,7 @@ ATIVOS = {
 }
 
 PERFIS = ["Executivo", "Gerente Comercial", "Diretor Comercial", "Diretor Financeiro"]
+PERFIS_DIRETORIA = {"Diretor Comercial", "Diretor Financeiro"}  # quem vê a Tabela de Preços de Referência
 
 
 # ============================================================================
@@ -593,6 +595,74 @@ def gerar_tabela_referencia() -> pd.DataFrame:
     return pd.DataFrame(linhas)
 
 
+# ---- Histórico de uso e cálculo (Google Sheets) ----------------------------
+# Registra, numa planilha Google, toda simulação que passar pelo botão
+# "Calcular Autorização" — quem usou, o que calculou, e se foi autorizado —
+# mesmo que a tela de resultado (aba "Calculadora de Autorização") não
+# mostre os números para quem está preenchendo o formulário. Configuração
+# necessária em Secrets: [historico] com "planilha_url" e
+# "gcp_service_account_json" (ver secrets_historico_template.toml). Se não
+# estiver configurado, ou se a chamada ao Google Sheets falhar por qualquer
+# motivo (rede, credencial etc.), o cálculo continua funcionando normalmente
+# — só o registro no histórico é pulado, com um aviso discreto na tela.
+_HISTORICO_CABECALHO = [
+    "Data/Hora", "Solicitante", "Cargo", "Ativo", "Tipo/Posição", "Nº do PI",
+    "Valor Negociado (R$)", "Preço de Tabela (R$)", "Desconto (%)", "BV usado (%)",
+    "Produção usada (R$)", "Repasse usado (%)", "Ativo Bônus", "Tipo Bônus",
+    "Margem Líquida (%)", "Lucro Líquido (R$)", "Cargo Exigido", "Resultado",
+]
+
+
+def _historico_configurado() -> bool:
+    try:
+        return "historico" in st.secrets and bool(st.secrets["historico"].get("planilha_url"))
+    except Exception:
+        return False
+
+
+def _abrir_planilha_historico():
+    import gspread
+    from google.oauth2.service_account import Credentials
+
+    cfg = st.secrets["historico"]
+    creds_info = json.loads(cfg["gcp_service_account_json"])
+    creds = Credentials.from_service_account_info(
+        creds_info, scopes=["https://www.googleapis.com/auth/spreadsheets"]
+    )
+    gc = gspread.authorize(creds)
+    sh = gc.open_by_url(cfg["planilha_url"])
+    ws = sh.sheet1
+    valores = ws.get_all_values()
+    if not valores:
+        ws.append_row(_HISTORICO_CABECALHO, value_input_option="USER_ENTERED")
+    return ws
+
+
+def registrar_historico(dados: dict, tipo_cfg_calc: dict, alcada: dict, dre: dict, autorizacao: dict) -> tuple[bool, str | None]:
+    """Anexa uma linha no histórico. Retorna (sucesso, mensagem_de_erro)."""
+    if not _historico_configurado():
+        return False, "Histórico não configurado em Secrets (seção [historico])."
+    try:
+        ws = _abrir_planilha_historico()
+        linha = [
+            dados["timestamp"].strftime("%d/%m/%Y %H:%M:%S"),
+            dados["nome"], dados["perfil"],
+            dados["ativo"], dados["tipo_cota"], dados["pi_numero"] or "",
+            round(dados["valor_pi"], 2), round(tipo_cfg_calc["preco_tabela"], 2),
+            round(alcada["desconto_pct"] * 100, 2), round(dados["bv_pct"] * 100, 2),
+            round(dados["producao_r"], 2),
+            round(dados["repasse_pct"] * 100, 2) if dados["repasse_pct"] is not None else "",
+            dados.get("ativo_bonus") or "Não", dados.get("tipo_bonus") or "",
+            round(alcada["margem_liquida_pct"] * 100, 2), round(dre["lucro_liquido"], 2),
+            alcada["cargo_exigido"] or "NENHUM",
+            "AUTORIZADO" if autorizacao["autorizado"] else "RECUSADO",
+        ]
+        ws.append_row(linha, value_input_option="USER_ENTERED")
+        return True, None
+    except Exception as exc:
+        return False, str(exc)
+
+
 # ============================================================================
 # 4) INTERFACE — STREAMLIT
 # ============================================================================
@@ -829,7 +899,18 @@ with st.sidebar:
         "resultado final da simulação."
     )
 
-tab_calc, tab_tabela = st.tabs(["🔐 Calculadora de Autorização", "📋 Tabela de Preços de Referência"])
+# A Tabela de Preços de Referência só aparece para perfis de Diretoria —
+# com o login temporariamente desativado, o cargo é autodeclarado no
+# dropdown da barra lateral, então esta é uma cortesia de interface, não
+# uma restrição de segurança real (qualquer pessoa pode se autodeclarar
+# Diretor). Volta a ser uma restrição de fato quando EXIGIR_LOGIN=True.
+mostrar_tabela_referencia = perfil in PERFIS_DIRETORIA
+_rotulos_abas = ["🔐 Calculadora de Autorização"]
+if mostrar_tabela_referencia:
+    _rotulos_abas.append("📋 Tabela de Preços de Referência")
+_abas = st.tabs(_rotulos_abas)
+tab_calc = _abas[0]
+tab_tabela = _abas[1] if mostrar_tabela_referencia else None
 
 with tab_calc:
     if calcular:
@@ -847,6 +928,12 @@ with tab_calc:
             "valor_pi": valor_pi,
             "timestamp": datetime.now(),
         }
+        st.session_state["_pendente_registrar_historico"] = True
+
+    if not mostrar_tabela_referencia:
+        st.caption(
+            "ℹ️ A Tabela de Preços de Referência é visível apenas para perfis de Diretoria."
+        )
 
     if "ultimo_calculo" not in st.session_state:
         st.info("Preencha os dados da negociação na barra lateral e clique em **Calcular Autorização**.")
@@ -863,6 +950,15 @@ with tab_calc:
         )
         alcada = determinar_alcada(dre, tipo_cfg_calc["preco_tabela"], dados["valor_pi"])
         autorizacao = avaliar_autorizacao(dados["perfil"], alcada)
+
+        # ---- Histórico — registra só uma vez por clique em "Calcular",   ---
+        # nunca a cada rerender/troca de aba (a flag é consumida abaixo).
+        if st.session_state.pop("_pendente_registrar_historico", False):
+            sucesso, erro_historico = registrar_historico(dados, tipo_cfg_calc, alcada, dre, autorizacao)
+            if sucesso:
+                st.session_state["_historico_status"] = ("ok", None)
+            else:
+                st.session_state["_historico_status"] = ("erro", erro_historico)
 
         # ---- Cabeçalho da negociação ---------------------------------------
         col_a, col_b, col_c, col_d, col_e, col_f = st.columns(6)
@@ -908,22 +1004,34 @@ with tab_calc:
         )
         st.markdown(_status_html, unsafe_allow_html=True)
 
+        status_historico = st.session_state.get("_historico_status")
+        if status_historico:
+            estado, erro_historico = status_historico
+            if estado == "ok":
+                st.caption("🗒️ Registrado no histórico de uso.")
+            else:
+                st.caption(
+                    "⚠️ Não foi possível registrar esta simulação no histórico "
+                    f"(o cálculo acima não foi afetado). Detalhe: {erro_historico}"
+                )
+
         st.markdown("")
         st.caption(
             "Dashboard de uso interno — Grupo Coruja. As premissas de custo, os valores calculados "
             "e as regras de alçada não são exibidos nesta aba — apenas a decisão final de autorização."
         )
 
-with tab_tabela:
-    st.caption(
-        "Referência de preços por ativo/tipo, calculada a partir das premissas atuais "
-        "(tributos, alçadas e metas de margem líquida) — aqui os valores APARECEM, "
-        "diferente da aba de autorização. '—' indica que a meta de margem não é "
-        "atingível para aquele ativo em nenhum preço positivo (a premissa geral já "
-        "prevê isso com o termo 'quando possível')."
-    )
-    df_ref = gerar_tabela_referencia()
-    df_fmt = df_ref.copy()
-    for col in df_fmt.columns[2:]:
-        df_fmt[col] = df_fmt[col].apply(lambda v: fmt_moeda(v) if v is not None else "—")
-    st.dataframe(df_fmt, width="stretch", hide_index=True, height=560)
+if tab_tabela is not None:
+    with tab_tabela:
+        st.caption(
+            "Referência de preços por ativo/tipo, calculada a partir das premissas atuais "
+            "(tributos, alçadas e metas de margem líquida) — aqui os valores APARECEM, "
+            "diferente da aba de autorização. '—' indica que a meta de margem não é "
+            "atingível para aquele ativo em nenhum preço positivo (a premissa geral já "
+            "prevê isso com o termo 'quando possível')."
+        )
+        df_ref = gerar_tabela_referencia()
+        df_fmt = df_ref.copy()
+        for col in df_fmt.columns[2:]:
+            df_fmt[col] = df_fmt[col].apply(lambda v: fmt_moeda(v) if v is not None else "—")
+        st.dataframe(df_fmt, width="stretch", hide_index=True, height=560)
